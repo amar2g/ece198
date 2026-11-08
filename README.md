@@ -4,7 +4,7 @@ A strap on the forearm that counts bicep curls and tells you whether each rep wa
 
 - **Hardware:** Arduino UNO R4 and a BMX160 motion sensor.
 - **Control:** you type single letters on your laptop.
-- **Results:** they appear on screen, and the Arduino's small built-in LED flashes for each rep.
+- **Results:** they appear on screen, a **green LED** (good rep) or **red LED** (needs work) lights for 1 second, and the Arduino's built-in "L" LED also flashes. The green and red LEDs are optional; everything else works without them.
 
 ---
 
@@ -17,6 +17,8 @@ A strap on the forearm that counts bicep curls and tells you whether each rep wa
 | USB-C cable | The UNO R4 uses USB-C. It must be a data cable, not a charge-only one. |
 | 4 jumper wires, male to female | Male end into the Arduino, female end onto the sensor's pins. Use the longest you have (20–30 cm or more), because the sensor goes on the arm and the Arduino stays on the table. |
 | Strap material | Velcro strap, elastic band, sweatband, or tape |
+| Green LED, red LED, 2 × 470 Ω resistors (optional) | For the green/red rep feedback. Any resistor from 470 Ω to 1 kΩ works. |
+| Breadboard (optional) | Makes the LEDs and sensor easy to wire |
 | Laptop | Must have the Arduino IDE |
 
 **Which UNO R4 do you have?** Look at the board.
@@ -29,16 +31,16 @@ You'll pick the matching name in step 4.
 
 ## 1. Get the files onto your computer
 
-1. Save **`CurlStrap.zip`** to your computer, for example in **Downloads**.
-2. Open File Explorer, **right-click `CurlStrap.zip` → Extract All… → Extract**. This creates a normal folder called `CurlStrap`.
+1. On the GitHub page (<https://github.com/amar2g/ece198>), click the green **Code** button → **Download ZIP**.
+2. Open File Explorer, **right-click `ece198-main.zip` → Extract All… → Extract**. This creates a normal folder called `ece198-main`.
    - Opening the zip by double-clicking isn't enough. The Arduino IDE can't open files from inside a zip.
-3. Optionally, move the `CurlStrap` folder somewhere easy to find, such as **Documents**. Every teammate can do the same on their own laptop.
+3. Optionally, move the `ece198-main` folder somewhere easy to find, such as **Documents**. Every teammate can do the same on their own laptop.
 
 Inside you'll find:
 
 | File | What it is |
 |---|---|
-| `hardware_setup.svg` | **Wiring diagram.** Double-click to open it in your web browser. |
+| `hardware_setup.png` / `hardware_setup.svg` | **Wiring diagram** (same picture). Open either one; the `.svg` opens in a web browser. |
 | `README.md` | This guide. |
 | `curl_strap/curl_strap.ino` | **The program you upload.** It talks to the sensor, reads your typed commands, prints results and flashes the LED. |
 | `curl_strap/CurlTracker.h` | **The rep logic.** It works out the angle, decides when a rep starts and ends, and judges it. It must stay in the same folder as `curl_strap.ino`. |
@@ -50,9 +52,6 @@ Inside you'll find:
 
 ## 2. Install the Arduino IDE (skip if already done)
 
-On this laptop, **Arduino IDE 2 and the UNO R4 board package are already installed**, so you can skip to step 3.
-
-On another computer:
 1. Download the Arduino IDE from <https://www.arduino.cc/en/software> and install it.
 2. Open it and click the **Boards Manager** icon on the left (second from the top, it looks like a circuit board).
 3. Search for **UNO R4** and install **"Arduino UNO R4 Boards"**.
@@ -63,7 +62,7 @@ No extra libraries are needed. The code talks to the BMX160 directly.
 
 ## 3. Wire the sensor (with the USB cable unplugged)
 
-**Open `hardware_setup.svg`** (double-click it). It shows every wire, where each pin is on the Arduino, and how the strap is worn. The details are below.
+**Open `hardware_setup.png`** (or `hardware_setup.svg`). It shows every wire, where each pin is on the Arduino, and how the strap is worn. The details are below.
 
 The BMX160 uses **I2C**, which needs only 4 wires: power, ground, a clock line (SCL) and a data line (SDA).
 
@@ -76,17 +75,22 @@ The BMX160 uses **I2C**, which needs only 4 wires: power, ground, a clock line (
 
 | BMX160 pin (label may vary) | Arduino UNO R4 pin |
 |---|---|
-| **VCC / VIN / +** | **5V** or **3.3V**, see the power note below |
+| **VCC / VIN / +** | **3.3V** (use 5V only if the board says 3.3V–5V, see below) |
 | **GND / −** | **GND** (any GND pin) |
 | **SCL / C** | **SCL** (or A5) |
 | **SDA / D** | **SDA** (or A4) |
 
-Leave any other pins on the sensor (INT, SDO, CS and so on) unconnected.
+**8-pin boards** (pins VCC, GND, SCL, SDA, CSB, SDO, INT1, INT2): also connect
+- **CSB → 3.3V.** This makes sure the chip starts in I2C mode, not SPI.
+- **SDO → GND.** This sets the address to 0x68. (The code also tries 0x69, so this mostly removes guesswork.)
+- Leave **INT1** and **INT2** unconnected.
+
+On a breadboard, each sensor pin must sit in its **own numbered row**, and each wire must go into the **same row** as the pin it connects to. The header pins must be **soldered** to the sensor board; pins that are only pushed through the holes don't make reliable contact.
 
 ### Power: which pin?
 Check the sensor's label or the shop page.
-- **Says "3.3V–5V"** (DFRobot "Gravity" boards do): connect VCC to **5V**.
-- **Says "3.3V" only:** connect VCC to **3.3V**. Never connect a 3.3V-only board to 5V; that can destroy it.
+- **Says "3.3V" only, or doesn't say:** connect VCC to **3.3V**. Never connect a 3.3V-only board to 5V; that can destroy it.
+- **Says "3.3V–5V"** (DFRobot "Gravity" boards do): you can connect VCC to **5V**.
   - Some 3.3V boards don't talk reliably to the UNO R4, which runs at 5V. If the program later says *"BMX160 not found"* and the wiring is correct, this is the likely cause.
   - Fix with an R4 WiFi: use its small **Qwiic** connector, which runs at 3.3V. In `curl_strap.ino`, change `#define SENSOR_WIRE Wire` to `#define SENSOR_WIRE Wire1`.
   - Fix with a Minima: put an I2C level shifter between the board and the sensor.
@@ -94,7 +98,17 @@ Check the sensor's label or the shop page.
 ### The I2C address select switch or pad
 Every I2C device has an address. The BMX160 can be **0x68** or **0x69**, and the address select switch or solder pad picks between them.
 
-**Leave it however it is.** The program tries both addresses and tells you which one it found. The setting only matters if another sensor on the same wires uses the same address.
+**Leave it however it is.** The program tries both addresses and tells you which one it found. The setting only matters if another sensor on the same wires uses the same address. (8-pin boards have no switch; the SDO pin does the same job, see above.)
+
+### Green and red LEDs (optional)
+
+| From | Through | To |
+|---|---|---|
+| Arduino pin **2** | 470 Ω resistor → **green** LED long leg (+); short leg (−) | **GND** |
+| Arduino pin **3** | 470 Ω resistor → **red** LED long leg (+); short leg (−) | **GND** |
+
+- The **long leg** of an LED is +. If an LED never lights, it's probably in backwards; flip it.
+- Don't use resistors smaller than 470 Ω. The UNO R4 Minima's pins are only rated for about 8 mA each, and 470 Ω keeps an LED around 6 mA.
 
 ---
 
@@ -173,7 +187,7 @@ Type s and press Enter to start a set.
       peak 134 deg | up 0.73 s | down 0.24 s | swing 0.75 g
    ```
    (These numbers are from the simulation; yours will differ.)
-   - **LED feedback:** after a good rep the orange **L** LED stays on for 1 second. After a rep that needs work it blinks 3 times quickly.
+   - **LED feedback:** after a good rep the **green** LED lights for 1 second; after a rep that needs work the **red** LED lights for 1 second. The orange **L** LED on the Arduino also stays on for 1 second (good) or blinks 3 times quickly (needs work).
 4. **Type `e` and press Enter** to end the set:
    ```
    SET FINISHED: 10 reps, 8 good (80%)
@@ -245,7 +259,7 @@ The reference is kept until you record a new one or the Arduino is reset or unpl
 | No COM port in Tools → Port | Use a different USB-C cable (data, not charge-only) or USB port. Double-press RESET and look again. |
 | Upload fails | Check Tools → Board matches your board (Minima vs WiFi). Double-press RESET (L LED fades in and out), re-pick the port, upload again. |
 | Serial Monitor shows nothing | Set 115200 baud, then press the RESET button on the Arduino. |
-| `BMX160 not found` and fast-blinking L LED | Unplug USB. Check all 4 wires: VCC→5V/3.3V, GND→GND, SDA→SDA, SCL→SCL, not swapped. Make sure the female ends are fully on the sensor pins. Plug back in. |
+| `BMX160 not found` and fast-blinking L LED (and red LED) | Unplug USB. Check all 4 wires: VCC→5V/3.3V, GND→GND, SDA→SDA, SCL→SCL, not swapped. Make sure the female ends are fully on the sensor pins. Plug back in. |
 | Device list says `(none)` | No power or no connection. Check VCC and GND first. |
 | A device is listed, but it's not 0x68/0x69 | You may have something else wired, or a different sensor. Tell us the address shown. |
 | 3.3V-only sensor never found | See the power note in step 3: R4 WiFi Qwiic connector or a level shifter. |
@@ -253,6 +267,7 @@ The reference is kept until you record a new one or the Arduino is reset or unpl
 | Stuck at "still moving" | Let the arm hang fully relaxed. Make sure the strap isn't wobbling. Resting the hand against the thigh helps. |
 | Reps not counted | The curl must go above 45° and come back below 20°. Type `p` and look at the plotter to see what angle you're reaching. Restart the set with the arm hanging straight. |
 | Good reps marked "Curl higher" | Record a reference rep (`r`), or lower the default `targetPeak` (step 12). |
+| Green or red LED never lights | Flip the LED (long leg goes toward the resistor and pin). Check it's on pin 2 (green) / 3 (red) and the short leg goes to GND. |
 
 ---
 
@@ -266,7 +281,7 @@ The reference is kept until you record a new one or the Arduino is reset or unpl
 
 It checks 10 situations: good reps, half reps, dropping the weight, holding then dropping, swinging, fidgeting, a patient with limited range plus a reference rep, a 24-second slow rep, and the strap worn at the wrist.
 
-With a C++ compiler such as g++, run these from the project folder (the one with `curl_strap` and `test` inside):
+With a C++ compiler such as g++, run these from the project folder (`ece198-main`, the one with `curl_strap` and `test` inside):
 ```bash
 g++ -O2 -std=c++17 test/test_curl.cpp -o test_curl
 ./test_curl

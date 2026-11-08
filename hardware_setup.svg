@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 870" width="1100" height="870" font-family="Arial, Helvetica, sans-serif">
-  <rect width="1100" height="870" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 905" width="1100" height="905" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1100" height="905" fill="#ffffff"/>
 
   <!-- Title -->
   <text x="30" y="42" font-size="24" font-weight="bold" fill="#111">Curl Strap – hardware setup</text>
-  <text x="30" y="66" font-size="14" fill="#555">Arduino UNO R4 (Minima or WiFi) + BMX160 motion sensor · 4 wires · no other parts needed</text>
+  <text x="30" y="66" font-size="14" fill="#555">Arduino UNO R4 (Minima or WiFi) + BMX160 motion sensor · 4 wires · optional green/red LEDs</text>
 
   <!-- ===================== WIRING DIAGRAM ===================== -->
   <text x="30" y="108" font-size="16" font-weight="bold" fill="#111">1. Wiring (do this with the USB cable unplugged)</text>
@@ -56,8 +56,8 @@
     <text transform="translate(439 231) rotate(90)" opacity="0.7">6</text>
     <text transform="translate(459 231) rotate(90)" opacity="0.7">5</text>
     <text transform="translate(479 231) rotate(90)" opacity="0.7">4</text>
-    <text transform="translate(499 231) rotate(90)" opacity="0.7">3</text>
-    <text transform="translate(519 231) rotate(90)" opacity="0.7">2</text>
+    <text transform="translate(499 231) rotate(90)">3</text>
+    <text transform="translate(519 231) rotate(90)">2</text>
     <text transform="translate(539 231) rotate(90)" opacity="0.7">1</text>
     <text transform="translate(559 231) rotate(90)" opacity="0.7">0</text>
   </g>
@@ -89,47 +89,78 @@
     <text transform="translate(509 434) rotate(-90)">A4</text>
     <text transform="translate(529 434) rotate(-90)">A5</text>
   </g>
-  <!-- 3.3V alternative marker -->
-  <circle cx="315" cy="450" r="11" fill="none" stroke="#d62728" stroke-width="2" stroke-dasharray="3 3"/>
+  <!-- 5V alternative marker -->
+  <circle cx="335" cy="450" r="11" fill="none" stroke="#d62728" stroke-width="2" stroke-dasharray="3 3"/>
 
-  <!-- BMX160 board -->
+  <!-- BMX160 board (8-pin version) -->
   <text x="895" y="218" font-size="14" font-weight="bold" fill="#111" text-anchor="middle">BMX160 sensor board</text>
-  <rect x="810" y="230" width="170" height="150" rx="8" fill="#2f3f8f" stroke="#1d2960" stroke-width="2"/>
-  <rect x="905" y="275" width="50" height="50" rx="3" fill="#111"/>
-  <text x="930" y="304" font-size="10" fill="#ddd" text-anchor="middle">BMX160</text>
-  <!-- address select -->
-  <rect x="905" y="345" width="34" height="14" rx="2" fill="#ddd"/>
-  <rect x="907" y="347" width="14" height="10" fill="#555"/>
-  <text x="945" y="356" font-size="9" fill="#fff">ADDR</text>
+  <rect x="810" y="230" width="170" height="260" rx="8" fill="#2f3f8f" stroke="#1d2960" stroke-width="2"/>
+  <rect x="915" y="275" width="50" height="50" rx="3" fill="#111"/>
+  <text x="940" y="304" font-size="10" fill="#ddd" text-anchor="middle">BMX160</text>
   <g fill="#d4b26a" stroke="#8a6d2b">
     <circle cx="815" cy="260" r="5"/><circle cx="815" cy="290" r="5"/>
     <circle cx="815" cy="320" r="5"/><circle cx="815" cy="350" r="5"/>
+    <circle cx="815" cy="380" r="5"/><circle cx="815" cy="410" r="5"/>
+    <circle cx="815" cy="440" r="5"/><circle cx="815" cy="470" r="5"/>
   </g>
   <g font-size="12" font-weight="bold" fill="#fff">
     <text x="826" y="264">SCL</text>
     <text x="826" y="294">SDA</text>
     <text x="826" y="324">GND</text>
     <text x="826" y="354">VCC</text>
+    <text x="826" y="384">CSB</text>
+    <text x="826" y="414">SDO</text>
+    <text x="826" y="444" opacity="0.7">INT1</text>
+    <text x="826" y="474" opacity="0.7">INT2</text>
   </g>
-  <text x="812" y="400" font-size="11" fill="#333">Address-select switch: leave it as it is</text>
-  <text x="812" y="415" font-size="11" fill="#333">(the code finds 0x68 or 0x69 by itself).</text>
-  <text x="812" y="438" font-size="11" fill="#b00">Your board's pin ORDER may differ – match</text>
-  <text x="812" y="453" font-size="11" fill="#b00">the LABELS: VCC/VIN/+, GND/−, SCL/C, SDA/D.</text>
+  <g font-size="11" fill="#ffd966">
+    <text x="862" y="384">→ 3.3V</text>
+    <text x="862" y="414">→ GND</text>
+    <text x="866" y="444" fill="#c9d1f0">(leave free)</text>
+    <text x="866" y="474" fill="#c9d1f0">(leave free)</text>
+  </g>
+  <text x="812" y="510" font-size="11" fill="#333">CSB → 3.3V keeps the chip in I2C mode; SDO → GND</text>
+  <text x="812" y="525" font-size="11" fill="#333">sets address 0x68 (code also tries 0x69). 4-pin boards</text>
+  <text x="812" y="540" font-size="11" fill="#333">have no CSB/SDO: leave any ADDR switch as it is.</text>
+  <text x="812" y="558" font-size="10.5" fill="#b00">Pin ORDER differs between boards: match the LABELS.</text>
 
   <!-- Wires -->
   <g fill="none" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
     <path d="M215 215 V150 H760 V260 H812" stroke="#e0a800"/>
     <path d="M235 215 V170 H740 V290 H812" stroke="#1f6fd1"/>
     <path d="M355 450 V500 H770 V320 H812" stroke="#222"/>
-    <path d="M335 450 V520 H790 V350 H812" stroke="#d62728"/>
+    <path d="M315 450 V520 H790 V350 H812" stroke="#d62728"/>
   </g>
   <g font-size="12" font-weight="bold">
     <text x="470" y="143" fill="#a07800">SCL (clock)  ·  Arduino SCL → sensor SCL</text>
     <text x="470" y="164" fill="#1f6fd1">SDA (data)  ·  Arduino SDA → sensor SDA</text>
     <text x="470" y="493" fill="#222">GND (ground)  ·  Arduino GND → sensor GND</text>
-    <text x="470" y="538" fill="#d62728">VCC (power)  ·  Arduino 5V → sensor VCC</text>
+    <text x="470" y="538" fill="#d62728">VCC (power)  ·  Arduino 3.3V → sensor VCC</text>
   </g>
-  <text x="470" y="556" font-size="11" fill="#d62728">If your sensor says "3.3V only": use the 3.3V pin (dashed circle) instead of 5V.</text>
+  <text x="470" y="556" font-size="11" fill="#d62728">Use 5V (dashed circle) only if your board says "3.3V–5V".</text>
+
+  <!-- Optional green / red LEDs on pins 2 and 3 -->
+  <g fill="none" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M495 215 V184 H690 V250" stroke="#c0392b"/>
+    <path d="M515 215 V192 H640 V250" stroke="#2e9e4f"/>
+    <path d="M640 282 V297 M640 315 V332 M690 282 V297 M690 315 V332" stroke="#444"/>
+  </g>
+  <g stroke="#444" stroke-width="1.5">
+    <rect x="634" y="250" width="12" height="32" fill="#e8d9b5"/>
+    <rect x="684" y="250" width="12" height="32" fill="#e8d9b5"/>
+    <path d="M630 332 H650 M634 337 H646 M638 342 H642 M680 332 H700 M684 337 H696 M688 342 H692" fill="none" stroke-width="2"/>
+  </g>
+  <circle cx="640" cy="306" r="9" fill="#2ecc71" stroke="#1e7a44" stroke-width="2"/>
+  <circle cx="690" cy="306" r="9" fill="#e74c3c" stroke="#922b21" stroke-width="2"/>
+  <g font-size="10" text-anchor="middle" fill="#333">
+    <text x="640" y="360" font-weight="bold" fill="#1e7a44">green</text>
+    <text x="640" y="373">pin 2</text>
+    <text x="690" y="360" font-weight="bold" fill="#922b21">red</text>
+    <text x="690" y="373">pin 3</text>
+    <text x="665" y="398" font-size="11" font-weight="bold" fill="#111">Optional LEDs</text>
+    <text x="665" y="412">470 Ω each · long leg (+)</text>
+    <text x="665" y="424">toward pin · short leg → GND</text>
+  </g>
 
   <!-- ===================== HOW IT'S WORN ===================== -->
   <line x1="30" y1="580" x2="1070" y2="580" stroke="#ddd" stroke-width="2"/>
@@ -173,17 +204,19 @@
   <text x="200" y="648" font-size="11" fill="#7a5c00">the upper arm so curls don't pull them</text>
 
   <!-- ===================== CHECKLIST ===================== -->
-  <rect x="580" y="598" width="490" height="256" rx="10" fill="#f5f7fa" stroke="#d5dbe3"/>
+  <rect x="580" y="598" width="490" height="292" rx="10" fill="#f5f7fa" stroke="#d5dbe3"/>
   <text x="600" y="626" font-size="15" font-weight="bold" fill="#111">Checklist</text>
   <g font-size="12" fill="#222">
     <text x="600" y="652">1. Unplug USB before changing any wires.</text>
-    <text x="600" y="674">2. SCL→SCL, SDA→SDA, GND→GND, VCC→5V (3.3V-only board: 3.3V).</text>
+    <text x="600" y="674">2. SCL→SCL, SDA→SDA, GND→GND, VCC→3.3V (5V only if "3.3V–5V").</text>
     <text x="600" y="696">3. Match the pin LABELS on your sensor, not the order in this picture.</text>
-    <text x="600" y="718">4. Leave the address-select switch alone.</text>
-    <text x="600" y="740">5. USB to laptop → Upload → Serial Monitor at 115200 baud.</text>
-    <text x="600" y="762">6. Type s + Enter, let the arm hang still, wait for GO!, then curl.</text>
-    <text x="600" y="790" font-weight="bold">Orange "L" LED on the Arduino:</text>
-    <text x="616" y="810">• on for 1 s = good rep    • 3 quick blinks = rep needs work</text>
-    <text x="616" y="830">• fast blinking right after power-up = sensor not found (check wires)</text>
+    <text x="600" y="718">4. 8-pin board: CSB→3.3V, SDO→GND, INT1/INT2 unconnected.</text>
+    <text x="600" y="740">5. Optional: pin 2 → 470 Ω → green LED, pin 3 → 470 Ω → red LED.</text>
+    <text x="600" y="762">6. USB to laptop → Upload → Serial Monitor at 115200 baud.</text>
+    <text x="600" y="784">7. Type s + Enter, let the arm hang still, wait for GO!, then curl.</text>
+    <text x="600" y="812" font-weight="bold">Feedback after each rep:</text>
+    <text x="616" y="832">• green LED 1 s = good rep    • red LED 1 s = rep needs work</text>
+    <text x="616" y="852">• orange "L" LED: on 1 s = good, 3 quick blinks = needs work</text>
+    <text x="616" y="872">• fast blinking right after power-up = sensor not found (check wires)</text>
   </g>
 </svg>
