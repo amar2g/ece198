@@ -8,8 +8,10 @@
 //   p  turn the live angle graph (Serial Plotter) on/off
 //   i  show the current targets
 //   h  show this help
-// The board's built-in LED (marked "L") lights for 1 s after a good rep and
-// blinks 3 times after a rep that needs fixing.
+// Feedback after every rep:
+//   green LED (pin 2) on for 1 s = good rep, red LED (pin 3) on for 1 s = needs work.
+//   The board's built-in LED (marked "L") also lights for 1 s after a good rep
+//   and blinks 3 times after a rep that needs work, so it works with no LEDs wired.
 //
 // See README.md for wiring and step-by-step instructions.
 
@@ -23,6 +25,9 @@
 
 const uint32_t SAMPLE_MS = 10;  // 100 samples per second
 const int STATUS_LED = LED_BUILTIN;
+const int GREEN_LED = 2;   // optional external LED + 470 ohm resistor to GND
+const int RED_LED = 3;     // optional external LED + 470 ohm resistor to GND
+const uint32_t COLOR_LED_MS = 1000;  // how long green/red stays on after a rep
 
 // ---------- BMX160 registers (same map as the Bosch BMI160 for accel/gyro) ----------
 const uint8_t REG_CHIP_ID = 0x00;   // reads 0xD8 on a BMX160
@@ -59,6 +64,8 @@ uint32_t zeroStartedAt = 0, lastStillWarning = 0;
 // LED feedback
 int ledToggles = 0;
 uint32_t ledNextAt = 0;
+bool colorLedOn = false;
+uint32_t colorLedOffAt = 0;
 
 // ---------- I2C helpers ----------
 bool writeReg(uint8_t reg, uint8_t val) {
@@ -140,17 +147,30 @@ bool readSensor(curl::Vec3& acc, curl::Vec3& gyr) {
 }
 
 // ---------- LED ----------
+void colorLed(int onPin, int offPin) {
+  digitalWrite(offPin, LOW);
+  digitalWrite(onPin, HIGH);
+  colorLedOn = true;
+  colorLedOffAt = millis() + COLOR_LED_MS;
+}
 void ledGood() {  // solid for 1 s
+  colorLed(GREEN_LED, RED_LED);
   digitalWrite(STATUS_LED, HIGH);
   ledToggles = 1;
   ledNextAt = millis() + 1000;
 }
 void ledBad() {  // 3 quick blinks
+  colorLed(RED_LED, GREEN_LED);
   digitalWrite(STATUS_LED, HIGH);
   ledToggles = 5;
   ledNextAt = millis() + 150;
 }
 void updateLed() {
+  if (colorLedOn && (int32_t)(millis() - colorLedOffAt) >= 0) {
+    digitalWrite(GREEN_LED, LOW);
+    digitalWrite(RED_LED, LOW);
+    colorLedOn = false;
+  }
   if (ledToggles > 0 && (int32_t)(millis() - ledNextAt) >= 0) {
     digitalWrite(STATUS_LED, !digitalRead(STATUS_LED));
     --ledToggles;
@@ -338,6 +358,10 @@ void onSample() {
 void setup() {
   pinMode(STATUS_LED, OUTPUT);
   digitalWrite(STATUS_LED, LOW);
+  pinMode(GREEN_LED, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  digitalWrite(GREEN_LED, LOW);
+  digitalWrite(RED_LED, LOW);
   Serial.begin(115200);
   uint32_t t0 = millis();
   while (!Serial && millis() - t0 < 3000) {}  // give the Serial Monitor time to connect
@@ -351,8 +375,11 @@ void setup() {
     Serial.println("ERROR: BMX160 not found at address 0x68 or 0x69.");
     scanBus();
     Serial.println("Fix the wiring, then press the RESET button on the Arduino.");
-    while (true) {  // fast blink = sensor problem
-      digitalWrite(STATUS_LED, !digitalRead(STATUS_LED));
+    bool blinkOn = false;
+    while (true) {  // fast blink (L LED and red LED) = sensor problem
+      blinkOn = !blinkOn;
+      digitalWrite(STATUS_LED, blinkOn ? HIGH : LOW);
+      digitalWrite(RED_LED, blinkOn ? HIGH : LOW);
       delay(100);
     }
   }
