@@ -32,7 +32,7 @@ ECE 198 allows AI use with disclosure. This log records each task done with an A
   - Docs: `website/README.md` (setup, three-laptop demo, decisions) and `website/HOW_IT_WORKS.md` (detailed walkthrough).
   - Along the way: on request, the AI trimmed features it had added without being asked and shortened its comments. Browser testing found and fixed two visual bugs (pop-ups covering the top bar, invisible status text) and a confusing duplicate-name message.
 - **Files:** `curl_strap/curl_strap.ino`, `website/` (all files), `AI_LOG.md`, `README.md` (link to the website).
-- **Commits:** `c4bc626`, `4d4c98d`, `8085411`, `4e8fa90`, plus the docs commit.
+- **Commits:** `85c6e21`, `4482853`, `f9addd7`, `8313c47`, `6b23da0` (docs).
 
 ## 2026-11-20: Reference rep step, sets, help button, faster check-ins
 - **Asked:**
@@ -55,4 +55,4 @@ ECE 198 allows AI use with disclosure. This log records each task done with an A
   - Demo mode: references, sets, rests, and occasional help requests.
   - 27 tests pass, and the new flow was verified in headless Chrome. Testing found and fixed two bugs: the pretend strap kept making reps after a reference rep, and "Set done" carried over into the next exercise.
 - **Files:** `website/src/class-session.js`, `website/src/config.js`, `website/src/simulator.js`, `website/server.js`, `website/public/join.html`, `website/public/js/join.js`, `website/public/instructor.html`, `website/public/js/instructor.js`, `website/public/js/strap-connection.js`, `website/public/css/style.css`, `website/test/class-session.test.js`, `website/README.md`, `website/HOW_IT_WORKS.md`, `AI_LOG.md`.
-- **Commits:** `d7698b8` (code), plus the docs commit.
+- **Commits:** `551315b` (code), `fee514d` (docs).
