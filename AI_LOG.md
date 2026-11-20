@@ -66,3 +66,8 @@ ECE 198 allows AI use with disclosure. This log records each task done with an A
   - Compile-checked on a PC with a fake screen that verified every line of text fits on the 128×64 display. Not yet tested on the real board.
   - README: library install step, screen wiring, what it shows, and troubleshooting.
 - **Files:** `curl_strap/curl_strap.ino`, `README.md`, `AI_LOG.md`.
+
+## 2026-11-20: Simpler OLED screens
+- **Asked:** the screen is too small for all that text. Use only: Starting, Ready, Hold, GO, the rep count (e.g. 1/8) with the feedback (e.g. Lower/slower), Done, and ISSUE.
+- **Done:** replaced the multi-line screens with one big word each (up to 4× text size). The rep screen is now "1/8" with GOOD or the two-word fix underneath. "Ready" also shows after a reference rep is saved, and ISSUE covers a missing or disconnected sensor. Removed the now-unused multi-line code. Compile-checked, and verified every screen fits the 128×64 display. Not yet tested on the real board.
+- **Files:** `curl_strap/curl_strap.ino`, `README.md`, `AI_LOG.md`.

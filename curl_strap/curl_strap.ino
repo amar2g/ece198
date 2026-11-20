@@ -232,45 +232,32 @@ void drawCentered(const char* text, int16_t y, uint8_t size) {
   screen.print(text);
 }
 
-// Shows up to 3 centred lines (pass nullptr to skip one). Size: 1 small, 2 medium, 3 big.
-void showScreen(const char* line1, uint8_t size1, const char* line2, uint8_t size2,
-                const char* line3, uint8_t size3) {
+// One word, as big as fits: e.g. "Ready", "Hold", "GO", "Done", "ISSUE"
+void showWord(const char* word) {
   if (!screenFound) return;
-  const char* lines[3] = {line1, line2, line3};
-  const uint8_t sizes[3] = {size1, size2, size3};
-  int16_t height = -4;
-  for (int i = 0; i < 3; ++i) if (lines[i]) height += 8 * sizes[i] + 4;
-  int16_t y = (SCREEN_H - height) / 2;
+  size_t length = strlen(word);
+  uint8_t size = length <= 5 ? 4 : (length <= 7 ? 3 : 2);
   screen.clearDisplay();
-  for (int i = 0; i < 3; ++i) {
-    if (!lines[i]) continue;
-    drawCentered(lines[i], y, sizes[i]);
-    y += 8 * sizes[i] + 4;
-  }
+  drawCentered(word, (SCREEN_H - 8 * size) / 2, size);
   screen.display();
 }
 
-void showReady() {
-  showScreen("Ready", 3, "waiting to start", 1, nullptr, 1);
-}
-
-// "Rep 3/8" on top, then GOOD or the fix needed (e.g. "Lower" / "slower")
+// "3/8" on top, then GOOD or the fix needed (e.g. "Lower" / "slower")
 void showRep(const curl::RepResult& r) {
   if (!screenFound) return;
-  char count[16];
-  snprintf(count, sizeof(count), "Rep %d/%d", r.number, repsPerSet);
+  char count[8];
+  snprintf(count, sizeof(count), "%d/%d", r.number, repsPerSet);
   screen.clearDisplay();
-  drawCentered(count, 0, 2);
-  screen.drawFastHLine(0, 20, SCREEN_W, SSD1306_WHITE);
+  drawCentered(count, 0, 3);
   if (r.good) {
-    drawCentered("GOOD", 32, 3);
+    drawCentered("GOOD", 34, 3);
   } else {
     char fix[16];  // two words, one per line, so they fit in medium text
     strncpy(fix, curl::Tracker::faultText(r.faults), sizeof(fix) - 1);
     fix[sizeof(fix) - 1] = '\0';
     char* secondWord = strchr(fix, ' ');
     if (secondWord) *secondWord++ = '\0';
-    drawCentered(fix, 26, 2);
+    drawCentered(fix, 28, 2);
     if (secondWord) drawCentered(secondWord, 46, 2);
   }
   screen.display();
@@ -406,7 +393,7 @@ void startZeroing() {
   Serial.println();
   Serial.println("GET READY: let the arm hang straight down and keep it still...");
   Serial.println("DATA,ZEROING");
-  showScreen("Hold", 2, "still...", 2, "arm straight down", 1);
+  showWord("Hold");
 }
 
 void endSet() {
@@ -414,7 +401,7 @@ void endSet() {
     mode = MODE_IDLE;
     Serial.println("Cancelled.");
     Serial.println("DATA,SET_CANCELLED");
-    showReady();
+    showWord("Ready");
     return;
   }
   mode = MODE_IDLE;
@@ -435,11 +422,7 @@ void endSet() {
   Serial.print(reps);
   Serial.print(',');
   Serial.println(good);
-  if (reps > 0) {  // 0 reps = the short set used for a reference rep: keep "Reference saved" on screen
-    char summary[20];
-    snprintf(summary, sizeof(summary), "%d/%d good", good, reps);
-    showScreen("Set done", 2, summary, 2, nullptr, 1);
-  }
+  if (reps > 0) showWord("Done");  // 0 reps = the short set used for a reference rep: keep "Ready"
   Serial.println("Type s to start another set.");
 }
 
@@ -484,7 +467,6 @@ void handleCommand(char c) {
       } else {
         tracker.teachNextRep();
         Serial.println("OK - the NEXT rep will be saved as the reference. Do one rep the way the kinesiologist wants it.");
-        showScreen("Do 1 rep", 2, "your best", 2, "reference rep", 1);
       }
       break;
     case 'e': case 'E':
@@ -518,7 +500,7 @@ void onSample() {
     if (!sensorErrorShown) {
       Serial.println("ERROR: lost contact with the BMX160. Check the wires, then press the board's RESET button.");
       Serial.println("DATA,ERROR,SENSOR_LOST");
-      showScreen("Sensor", 2, "problem!", 2, "check the wires", 1);
+      showWord("ISSUE");
       sensorErrorShown = true;
     }
     return;
@@ -556,9 +538,7 @@ void onSample() {
       Serial.println("GO! Start curling. (type r for a reference rep, e to end the set)");
       Serial.print("DATA,SET_START,");
       Serial.println(repsPerSet);
-      char setText[20];
-      snprintf(setText, sizeof(setText), "set of %d reps", repsPerSet);
-      showScreen("GO!", 3, setText, 1, nullptr, 1);
+      showWord("GO");
       printTargets();
     }
     return;
@@ -575,7 +555,7 @@ void onSample() {
       Serial.println("REFERENCE REP SAVED.");
       printRepDetails(r);
       sendDataReference(r);
-      showScreen("Reference", 2, "saved!", 2, "you're ready", 1);
+      showWord("Ready");  // reference saved
       printTargets();
     } else {
       if (r.good) ledGood(); else ledBad();
@@ -627,13 +607,13 @@ void setup() {
   SENSOR_WIRE.begin();
   SENSOR_WIRE.setClock(400000);
   setupScreen();
-  showScreen("Curl Strap", 2, "starting...", 1, nullptr, 1);
+  showWord("Starting");
 
   if (!setupSensor()) {
     Serial.println("ERROR: BMX160 not found at address 0x68 or 0x69.");
     scanBus();
     Serial.println("Fix the wiring, then press the RESET button on the Arduino.");
-    showScreen("Sensor", 2, "not found", 2, "check wires + RESET", 1);
+    showWord("ISSUE");
     bool blinkOn = false;
     int blinkCount = 0;
     while (true) {  // fast blink (L LED and red LED) = sensor problem
@@ -648,7 +628,7 @@ void setup() {
   Serial.print("BMX160 found at address 0x");
   Serial.println(sensorAddr, HEX);
   Serial.println("DATA,READY");
-  showReady();
+  showWord("Ready");
   printHelp();
   Serial.println("Type s and press Enter to start a set.");
 }

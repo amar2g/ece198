@@ -204,11 +204,13 @@ Type s and press Enter to start a set.
    ```
    (These numbers are from the simulation; yours will differ.)
    - **LED feedback:** after a good rep the **green** LED lights for 1 second; after a rep that needs work the **red** LED lights for 1 second. The orange **L** LED on the Arduino also stays on for 1 second (good) or blinks 3 times quickly (needs work).
-   - **Screen (if connected):**
-     - "Hold still…" while the arm is getting still, then **GO!**
-     - after each rep, **Rep 3/8** with **GOOD** or the fix needed, e.g. "Lower slower"
-     - **Set done** with how many reps were good at the end
-     - "Reference saved!" after a reference rep, and "Sensor problem!" if a wire comes loose
+   - **Screen (if connected):** big single words, so they're easy to read.
+     - **Starting**, then **Ready**
+     - **Hold** while the arm gets still, then **GO**
+     - after each rep, **3/8** with **GOOD** or the fix underneath, e.g. **Lower / slower**
+     - **Done** at the end of a set
+     - **Ready** again after a reference rep is saved
+     - **ISSUE** if the sensor isn't found or a wire comes loose
      - the screen only updates between reps, never during one, so the sensor readings aren't delayed
 4. **Type `e` and press Enter** to end the set:
    ```
