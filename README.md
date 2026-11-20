@@ -325,3 +325,9 @@ Change a number, save, and **Upload** again. These are starting guesses; tune th
 3. Compare their notes with the strap's results, and report the agreement, for example "the strap agreed with a human observer on 92% of 60 reps."
 
 That one number is the strongest evidence you can show.
+
+---
+
+## 15. Instructor website (optional)
+
+The `website/` folder has a live dashboard that collects every rep from every strap, so one instructor can watch a whole class. See [`website/README.md`](website/README.md) to set it up, and [`website/HOW_IT_WORKS.md`](website/HOW_IT_WORKS.md) for how it works. The sketch prints extra `DATA,...` lines for the website; the strap works exactly as before without it.
