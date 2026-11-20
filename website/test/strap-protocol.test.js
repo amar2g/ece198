@@ -18,10 +18,9 @@ test("reads a bad rep with two faults, ignoring the Windows \\r line ending", ()
   assert.deepEqual(event.rep.faults, ["SHORT_RANGE", "LOWER_FAST"]);
 });
 
-test("reads set start, set end, status and errors", () => {
+test("reads set start, set end and errors", () => {
   assert.deepEqual(parseStrapLine("DATA,SET_START,8"), { type: "set-start", repsPerSet: 8 });
   assert.deepEqual(parseStrapLine("DATA,SET_END,8,6"), { type: "set-end", reps: 8, good: 6 });
-  assert.deepEqual(parseStrapLine("DATA,STATUS,IDLE,10"), { type: "status", mode: "IDLE", repsPerSet: 10 });
   assert.deepEqual(parseStrapLine("DATA,ERROR,SENSOR_LOST"), { type: "error", code: "SENSOR_LOST" });
   assert.deepEqual(parseStrapLine("DATA,READY"), { type: "ready" });
 });

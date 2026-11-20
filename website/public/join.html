@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join Class</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;800&display=swap">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/style.css">
+  <script type="module" src="/js/join.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark"><span></span><span></span><span></span></span>CCCARE Rep Monitor</a>
+    <div class="topbar-right">
+      <span id="server-status" class="pill pill-off">Connecting…</span>
+    </div>
+  </header>
+
+  <main class="page page-narrow">
+
+    <!-- STEP 1: name -->
+    <section class="panel" id="name-panel">
+      <div class="panel-title"><span class="step-number">1</span><h2>Who are you?</h2></div>
+
+      <form id="join-form" class="stack" autocomplete="off">
+        <div>
+          <label for="name-input">Your name (shown to your instructor)</label>
+          <input id="name-input" type="text" maxlength="30" placeholder="e.g. Sam K." required>
+        </div>
+        <button class="button button-big" type="submit">Join class</button>
+      </form>
+
+      <div id="joined-view" class="row hidden">
+        <p class="big-number" style="font-size:1.6rem">Hi, <span id="joined-name"></span>!</p>
+        <button id="leave-button" class="button button-white button-small" type="button">Not you? Leave</button>
+      </div>
+
+      <div id="join-message" class="message-box hidden"></div>
+
+      <details style="margin-top:1rem">
+        <summary>Advanced: instructor laptop address</summary>
+        <p class="small muted" style="margin-top:.5rem">
+          Leave this empty normally. Only fill it in if you opened this page from
+          <code>localhost</code> on a participant laptop (README, "Option B").
+        </p>
+        <div class="row">
+          <input id="server-address-input" type="text" placeholder="e.g. 192.168.43.10:3000">
+          <button id="server-address-save" class="button button-blue button-small" type="button">Use this address</button>
+        </div>
+      </details>
+    </section>
+
+    <!-- STEP 2: strap -->
+    <section class="panel" id="strap-panel">
+      <div class="panel-title">
+        <span class="step-number">2</span><h2>Connect your strap</h2>
+        <span id="strap-status" class="pill pill-off">Not connected</span>
+      </div>
+      <p class="muted">Plug the strap's USB cable into this laptop, then press the button and pick the Arduino in the list.</p>
+      <div class="row">
+        <button id="connect-strap-button" class="button" type="button">🔌 Connect strap</button>
+        <button id="pretend-strap-button" class="button button-white" type="button">No strap? Use a pretend one</button>
+        <button id="disconnect-strap-button" class="button button-white hidden" type="button">Disconnect strap</button>
+      </div>
+      <div id="strap-message" class="message-box hidden"></div>
+    </section>
+
+    <!-- STEP 3: exercise -->
+    <section class="panel" id="exercise-panel">
+      <div class="panel-title"><span class="step-number">3</span><h2>Exercise</h2></div>
+      <p id="exercise-text" class="message-box message-info">Join the class first.</p>
+
+      <div class="row" style="margin-top:1rem">
+        <button id="start-set-button" class="button button-big" type="button" disabled>▶ Start my set</button>
+        <button id="reference-button" class="button button-blue" type="button" disabled>Record reference rep</button>
+        <button id="end-set-button" class="button button-white" type="button" disabled>End my set</button>
+      </div>
+
+      <div class="row" style="margin-top:1.25rem; align-items:baseline">
+        <span class="big-number" id="reps-sent">0</span>
+        <span>reps sent to your instructor</span>
+      </div>
+      <p class="small muted">
+        The strap's light shows how each rep went: <strong>green</strong> = good,
+        <strong>red</strong> = needs work. Your instructor sees the details.
+      </p>
+
+      <details>
+        <summary>Strap messages (for troubleshooting)</summary>
+        <pre id="strap-log" class="strap-log" aria-live="off"></pre>
+      </details>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,445 @@
+/* Neo-brutalist style (thick outlines, hard shadows, flat colours) in CCCARE logo colours.
+   Sections: 1 basics  2 layout  3 buttons/inputs  4 pills/badges  5 cards  6 pop-ups  7 page bits  8 small screens */
+
+/* ===================================================== 1. colours & basics */
+:root {
+  /* CCCARE brand colours (from the logo) */
+  --cccare-blue: #1d6fb8;   /* the "care" wordmark */
+  --cccare-navy: #0b3a63;   /* darker blue for headings and the top bar */
+  --cccare-sky: #8ccff0;    /* light blue swoosh */
+  --cccare-sky-pale: #e3f4fc;
+  --cccare-lime: #d6e04b;   /* yellow-green swoosh */
+
+  /* Result colours. Kept clearly different from the brand lime. */
+  --good-green: #3cc872;
+  --good-green-pale: #d9f7e4;
+  --bad-red: #ff5a5a;
+  --bad-red-pale: #ffe0e0;
+  --warn-yellow: #ffd23f;
+  --warn-yellow-pale: #fff4c9;
+
+  /* Neo-brutalist basics */
+  --ink: #111111;           /* outlines, shadows and text */
+  --paper: #fffdf6;         /* card background */
+  --page: #f2f9fd;          /* page background (very pale sky) */
+  --muted: #4b5563;
+  --border: 3px solid var(--ink);
+  --shadow: 5px 5px 0 var(--ink);
+  --shadow-small: 3px 3px 0 var(--ink);
+  --radius: 6px;
+
+  --font: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  background-color: var(--page);
+  /* subtle dotted grid, a common neo-brutalist backdrop */
+  background-image: radial-gradient(rgba(11, 58, 99, 0.12) 1px, transparent 1px);
+  background-size: 22px 22px;
+  line-height: 1.45;
+}
+
+h1, h2, h3 { margin: 0 0 0.5rem; line-height: 1.15; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; }
+h2 { font-size: 1.35rem; font-weight: 800; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0 0 0.75rem; }
+a { color: var(--cccare-blue); font-weight: 700; }
+code { font-family: var(--font-mono); font-size: 0.9em; }
+
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.small { font-size: 0.875rem; }
+
+/* ===================================================== 2. layout */
+
+/* Top bar with the CCCARE-style wordmark */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.25rem;
+  background: var(--cccare-navy);
+  color: white;
+  border-bottom: var(--border);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: white;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+/* the three swooshes from the logo, drawn as coloured blocks */
+.brand-mark { display: inline-flex; gap: 3px; }
+.brand-mark span { width: 10px; height: 26px; border: 2px solid var(--ink); border-radius: 3px; }
+.brand-mark span:nth-child(1) { background: var(--cccare-lime); }
+.brand-mark span:nth-child(2) { background: var(--cccare-sky); }
+.brand-mark span:nth-child(3) { background: var(--cccare-blue); }
+.topbar-right { margin-left: auto; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+.page { max-width: 1400px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+.page-narrow { max-width: 720px; margin-left: auto; margin-right: auto; }
+
+/* The basic neo-brutalist box */
+.panel {
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.panel-title { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.panel-title h2 { margin: 0; }
+
+.row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.stack > * + * { margin-top: 0.75rem; }
+
+/* ===================================================== 3. buttons & inputs */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  font: inherit;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--cccare-lime);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-small);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+/* "pressing" the button pushes it into its shadow */
+.button:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+.button:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid var(--cccare-blue);
+  outline-offset: 2px;
+}
+.button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: var(--shadow-small); }
+
+.button-blue { background: var(--cccare-sky); }
+.button-red { background: var(--bad-red); }
+.button-white { background: white; }
+.button-big { font-size: 1.2rem; padding: 0.85rem 1.5rem; }
+.button-small { font-size: 0.85rem; padding: 0.3rem 0.6rem; box-shadow: 2px 2px 0 var(--ink); }
+
+label { font-weight: 700; display: block; margin-bottom: 0.3rem; }
+input[type="text"], input[type="number"], input[type="password"], select {
+  font: inherit;
+  font-size: 1.05rem;
+  padding: 0.55rem 0.75rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.08);
+}
+input[type="text"], input[type="password"] { width: 100%; max-width: 360px; }
+input[type="number"] { width: 6rem; }
+
+.message-box {
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.9rem;
+  font-weight: 700;
+  margin-top: 0.75rem;
+}
+.message-error { background: var(--bad-red-pale); }
+.message-ok { background: var(--good-green-pale); }
+.message-info { background: var(--cccare-sky-pale); }
+
+/* ===================================================== 4. status pills & badges */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: white;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.pill::before { content: ""; width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 2px solid var(--ink); background: #cbd5e1; }
+.pill-ok::before { background: var(--good-green); }
+.pill-busy::before { background: var(--cccare-sky); }
+.pill-warn::before { background: var(--warn-yellow); }
+.pill-bad::before { background: var(--bad-red); }
+.pill-off::before { background: #cbd5e1; }
+
+.badge {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  background: var(--cccare-sky-pale);
+}
+.badge-sim { background: #e9e5ff; }
+.badge-real { background: var(--cccare-lime); }
+
+/* Big phase sign: LOBBY / LIVE / FINISHED */
+.phase-sign {
+  padding: 0.3rem 0.8rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-small);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  background: white;
+  color: var(--ink);
+}
+.phase-running { background: var(--good-green); animation: pulse 1.6s infinite; }
+.phase-finished { background: var(--cccare-sky); }
+@keyframes pulse { 50% { box-shadow: 0 0 0 var(--ink); transform: translate(2px, 2px); } }
+
+/* ===================================================== 5. participant cards */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat {
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-small);
+  padding: 0.75rem 1rem;
+}
+.stat-number { font-size: 2rem; font-weight: 800; line-height: 1; }
+.stat-label { font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+.stat-good { background: var(--good-green-pale); }
+.stat-bad { background: var(--bad-red-pale); }
+.stat-warn { background: var(--warn-yellow-pale); }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.1rem;
+}
+.person-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.9rem;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.person-card:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+.person-card:focus-visible { outline: 3px solid var(--cccare-blue); outline-offset: 3px; }
+
+.person-name { font-weight: 800; font-size: 1.1rem; overflow-wrap: anywhere; }
+.person-top { display: flex; justify-content: space-between; gap: 0.5rem; align-items: flex-start; }
+.person-count { font-size: 2.1rem; font-weight: 800; line-height: 1; }
+.person-count small { font-size: 1rem; color: var(--muted); }
+.person-goodbad { display: flex; gap: 0.75rem; font-weight: 800; font-size: 0.95rem; }
+.text-good { color: #157a3d; }
+.text-bad { color: #c22323; }
+.person-issue { font-size: 0.85rem; font-weight: 700; min-height: 1.2em; }
+.person-footer { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; gap: 0.5rem; }
+
+/* One square per rep: green = good, red = bad, empty = not done yet */
+.rep-squares { display: flex; flex-wrap: wrap; gap: 4px; }
+.rep-square { width: 16px; height: 16px; border: 2px solid var(--ink); border-radius: 3px; background: white; }
+.rep-square.good { background: var(--good-green); }
+.rep-square.bad { background: var(--bad-red); }
+
+/* Card needs the instructor's attention */
+.person-card.check-in { border-color: var(--bad-red); box-shadow: 5px 5px 0 var(--bad-red); }
+.check-in-sticker {
+  position: absolute;
+  top: -12px;
+  right: 10px;
+  padding: 0.1rem 0.5rem;
+  background: var(--bad-red);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transform: rotate(3deg);
+  animation: wiggle 1.2s infinite;
+}
+@keyframes wiggle { 50% { transform: rotate(-3deg); } }
+.person-card.offline { opacity: 0.6; }
+
+/* Final results after the exercise ends (colour + words, never colour alone) */
+.person-card.result-good { background: var(--good-green-pale); border-color: var(--ink); }
+.person-card.result-bad { background: var(--bad-red-pale); }
+.person-card.result-incomplete { background: var(--warn-yellow-pale); }
+.result-label {
+  align-self: flex-start;
+  padding: 0.15rem 0.55rem;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.result-good .result-label { background: var(--good-green); }
+.result-bad .result-label { background: var(--bad-red); }
+.result-incomplete .result-label { background: var(--warn-yellow); }
+
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 2rem;
+  text-align: center;
+  border: 3px dashed var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-weight: 700;
+}
+
+/* ===================================================== 6. pop-ups & dialog */
+.toast-stack {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(380px, calc(100vw - 2rem));
+}
+.toast {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.8rem 0.9rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--cccare-sky-pale);
+  font-weight: 700;
+  animation: slide-in 0.2s ease-out;
+}
+.toast-warning { background: var(--bad-red-pale); }
+.toast-icon { font-size: 1.4rem; line-height: 1; }
+.toast-body { flex: 1; }
+.toast-close { background: none; border: none; font-size: 1.3rem; font-weight: 800; cursor: pointer; line-height: 1; }
+@keyframes slide-in { from { transform: translateY(120%); } }
+
+
+dialog {
+  width: min(760px, calc(100vw - 2rem));
+  padding: 1.25rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: 8px 8px 0 var(--ink);
+  background: var(--paper);
+}
+dialog::backdrop { background: rgba(11, 58, 99, 0.45); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { padding: 0.45rem 0.6rem; border: 2px solid var(--ink); text-align: left; }
+th { background: var(--cccare-sky); }
+tr.row-good td:nth-child(2) { background: var(--good-green-pale); }
+tr.row-bad td:nth-child(2) { background: var(--bad-red-pale); }
+
+/* ===================================================== 7. page-specific bits */
+
+/* Home page: two big choices */
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+.choice {
+  display: block;
+  padding: 1.5rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: var(--ink);
+}
+.choice:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
+.choice-participant { background: var(--cccare-lime); }
+.choice-instructor { background: var(--cccare-sky); }
+.choice .choice-emoji { font-size: 2.5rem; }
+
+/* Join page step numbers */
+.step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: var(--border);
+  border-radius: 50%;
+  background: var(--cccare-lime);
+  font-weight: 800;
+}
+.big-number { font-size: 3.5rem; font-weight: 800; line-height: 1; }
+
+.strap-log {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  margin: 0.5rem 0 0;
+  background: #111;
+  color: #b9f6ca;
+  border: var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+}
+
+details summary { cursor: pointer; font-weight: 700; }
+
+/* Instructor controls */
+.controls { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+.controls .field { display: flex; flex-direction: column; }
+.join-address { font-family: var(--font-mono); font-weight: 700; background: var(--cccare-sky-pale); padding: 0.1rem 0.4rem; border: 2px solid var(--ink); border-radius: 4px; }
+
+.results-banner {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  background: var(--cccare-lime);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-weight: 800;
+}
+
+/* ===================================================== 8. phones / small screens */
+@media (max-width: 600px) {
+  .page { padding: 1rem 0.75rem 3rem; }
+  .panel { padding: 1rem; box-shadow: var(--shadow-small); }
+  .card-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .person-count { font-size: 1.6rem; }
+}
+@media (max-width: 420px) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+/* People who prefer less motion get no pulsing or wiggling */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Instructor Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;800&display=swap">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/style.css">
+  <script type="module" src="/js/instructor.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark"><span></span><span></span><span></span></span>CCCARE Rep Monitor · Instructor</a>
+    <div class="topbar-right">
+      <span id="phase-sign" class="phase-sign hidden"></span>
+      <span id="server-status" class="pill pill-off">Connecting…</span>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <!-- PIN login -->
+    <section id="login-panel" class="panel page-narrow">
+      <h1>Instructor login</h1>
+      <form id="login-form" class="stack">
+        <div>
+          <label for="pin-input">PIN</label>
+          <input id="pin-input" type="password" inputmode="numeric" autocomplete="off" required>
+        </div>
+        <button class="button button-big" type="submit">Open dashboard</button>
+      </form>
+      <div id="login-message" class="message-box message-error hidden"></div>
+    </section>
+
+    <div id="dashboard" class="hidden">
+
+      <!-- Controls -->
+      <section class="panel">
+        <div class="controls">
+          <div class="field">
+            <label for="target-input">Target reps</label>
+            <input id="target-input" type="number" min="1" max="50" value="8">
+          </div>
+          <button id="start-button" class="button button-big" type="button">▶ Start exercise</button>
+          <button id="end-button" class="button button-big button-red" type="button">■ End exercise</button>
+          <button id="reset-button" class="button button-white" type="button">New round</button>
+          <button id="demo-button" class="button button-blue" type="button">Demo mode: OFF</button>
+        </div>
+        <p class="small" style="margin:1rem 0 0">
+          Participants join at <span id="join-addresses"></span>
+        </p>
+      </section>
+
+      <!-- Shown after the exercise ends -->
+      <section id="results-banner" class="results-banner hidden"></section>
+
+      <section id="stats" class="stats"></section>
+
+      <section id="cards" class="card-grid"></section>
+    </div>
+  </main>
+
+  <!-- One participant's reps -->
+  <dialog id="person-dialog">
+    <div class="panel-title">
+      <h2 id="dialog-name"></h2>
+      <span id="dialog-badge" class="badge"></span>
+    </div>
+    <p id="dialog-summary"></p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Result</th><th>Peak (°)</th><th>Up (s)</th><th>Down (s)</th><th>Swing (g)</th><th>Issues</th></tr></thead>
+        <tbody id="dialog-reps"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:1rem">
+      <button id="dialog-checked" class="button" type="button">✓ Mark as checked</button>
+      <button id="dialog-remove" class="button button-red button-small" type="button">Remove from class</button>
+      <button id="dialog-close" class="button button-white" type="button" style="margin-left:auto">Close</button>
+    </div>
+  </dialog>
+
+  <div id="toasts" class="toast-stack" aria-live="polite"></div>
+</body>
+</html>
