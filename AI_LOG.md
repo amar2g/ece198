@@ -33,3 +33,26 @@ ECE 198 allows AI use with disclosure. This log records each task done with an A
   - Along the way: on request, the AI trimmed features it had added without being asked and shortened its comments. Browser testing found and fixed two visual bugs (pop-ups covering the top bar, invisible status text) and a confusing duplicate-name message.
 - **Files:** `curl_strap/curl_strap.ino`, `website/` (all files), `AI_LOG.md`, `README.md` (link to the website).
 - **Commits:** `c4bc626`, `4d4c98d`, `8085411`, `4e8fa90`, plus the docs commit.
+
+## 2026-11-20: Reference rep step, sets, help button, faster check-ins
+- **Asked:**
+  - make it clearer that the reference rep worked: a prompt to record it, then green "you're ready" text
+  - the instructor should see whose reference rep is ready, with a way to hold everyone until they're ready ("or is that bad?")
+  - show how many sets there are, with a reference rep once per exercise rather than per set
+  - make checking someone off faster (Enter marks them checked and closes the popup)
+  - asked the AI to ask questions first. Unsure which options suit CCCARE's older participants, we asked for its reasoning, and also asked about a "something's wrong" button and starting only the people who are ready.
+- **Decided (after discussion):**
+  - the instructor decides when to start, never automatic, so one broken strap can't block the class
+  - anyone ready can begin once started, and latecomers start when ready
+  - each participant starts their own next set
+  - no reference rep = judged with default targets, with a NO REF badge
+  - one big "I need help" button rather than a menu
+  - keep the 60 s no-rep alert (not 30 s, to avoid alarm fatigue), and allow 2 min of rest between sets
+- **Done:**
+  - Join page: guided reference-rep step ending in "✓ Reference saved - you're ready!"; Start locked until the instructor starts; "Set 1 of 2" progress with rest prompts; help button.
+  - Dashboard: sets input; plan shown to participants before starting; ready counter; REF ✓/NO REF badges; "not ready" warning with names; "everyone ready" pop-up; one row of rep squares per set; reference numbers in the person popup; Enter = checked + close.
+  - Server/logic: sets, reference reps, help requests, rest-aware alerts.
+  - Demo mode: references, sets, rests, and occasional help requests.
+  - 27 tests pass, and the new flow was verified in headless Chrome. Testing found and fixed two bugs: the pretend strap kept making reps after a reference rep, and "Set done" carried over into the next exercise.
+- **Files:** `website/src/class-session.js`, `website/src/config.js`, `website/src/simulator.js`, `website/server.js`, `website/public/join.html`, `website/public/js/join.js`, `website/public/instructor.html`, `website/public/js/instructor.js`, `website/public/js/strap-connection.js`, `website/public/css/style.css`, `website/test/class-session.test.js`, `website/README.md`, `website/HOW_IT_WORKS.md`, `AI_LOG.md`.
+- **Commits:** `d7698b8` (code), plus the docs commit.

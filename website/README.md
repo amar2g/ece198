@@ -20,7 +20,8 @@ A live dashboard for the curl strap. Each participant's strap sends every rep to
 4. On the join page, type a name and then either:
    - plug in the strap and click **Connect strap**, picking the Arduino in the list, or
    - click **No strap? Use a pretend one** to test without hardware.
-5. On the dashboard, set **Target reps**, click **Start exercise**, then click **Start my set** on the join page.
+5. On the join page, click **Record my reference rep** and follow the steps until it says "✓ Reference saved - you're ready!".
+6. On the dashboard, set **Target reps** and **Sets**, then click **Start exercise**. On the join page, click **Start set 1**.
 
 > Close the Arduino IDE's **Serial Monitor** first. Only one program can use the strap's USB port at a time.
 
@@ -65,11 +66,11 @@ The hotspot can give the instructor laptop a different address next time. If it 
 Test the whole setup the day before.
 
 ### Running the demo
-1. Instructor: open the dashboard, set the target (e.g. 8), and turn on **Demo mode** to add 28 pretend participants.
-2. Participants: join with their names and connect their straps.
-3. Instructor: click **Start exercise**. Participants click **Start my set**, let the arm hang still until **GO**, then curl.
-4. Watch the cards and pop-ups ("3 bad reps in a row", "hasn't done a rep in 60 s").
-5. Click **End exercise** to show the green/red/yellow results. Click any card to see each rep's numbers.
+1. Instructor: open the dashboard, set reps and sets (e.g. 2 sets of 8), and turn on **Demo mode** to add 28 pretend participants.
+2. Participants: join with their names, connect their straps, and record a reference rep. Watch the dashboard's "ready" counter climb and the badges turn **REF ✓**.
+3. Instructor: click **Start exercise** (it warns if anyone isn't ready). Participants click **Start set 1**, let the arm hang still until **GO**, then curl. After a rest, they click **Start set 2**.
+4. Watch the cards and pop-ups ("3 bad reps in a row", "needs help", "hasn't done a rep in 60 s"). Click a card and press **Enter** to mark that person checked.
+5. Click **End exercise** to show the green/red/yellow results. Click any card to see each rep's numbers and the person's reference rep.
 
 ---
 
@@ -85,9 +86,14 @@ Test the whole setup the day before.
 | Hosting | A local Node.js server on the instructor laptop, which works offline at the symposium. A real product would be hosted online with HTTPS and proper logins. |
 | Arduino output | `curl_strap.ino` prints one `DATA,...` line per event as well as its normal messages. New `n<number>` command so the strap's set length matches the instructor's target. |
 | Privacy | The instructor page needs a PIN, and participants only see their own rep count, never good/bad results. |
-| Target reps | One target for the whole class, set by the instructor (1–50). |
-| Final colours | Green = more than half good. Red = half or more bad. Yellow = didn't reach the target. |
-| Demo | Demo mode adds 28 pretend participants with different behaviours, mixed in with the real straps. |
+| Plan | One plan for the whole class, set by the instructor: reps per set (1–50) and sets (1–5). Participants see it before the exercise starts. |
+| Reference rep | Recorded once per exercise, before set 1, with a guided step that ends in a green "you're ready". The instructor sees who's ready and decides when to start; nothing starts automatically, so one broken strap can't hold up the class. Anyone without a reference rep can still exercise, judged against the strap's default targets (NO REF badge). **New round** = new exercise, so everyone records a new reference rep. |
+| Sets | Each participant starts their own next set after resting, so a mixed-ability class isn't held to one pace. |
+| Help | One big "🙋 I need help" button (no menu, simple for older adults). It alerts the instructor and puts a HELP sticker on the card. The strap reports hardware problems by itself. |
+| Check-ins | Click a card, press **Enter**: marked as checked, and the popup closes. |
+| Alerts | 3 bad reps in a row; no rep for 60 s during a set; resting over 2 min between sets; help requests; strap or laptop problems; everyone ready; someone finished. 60 s rather than 30 s, to avoid "alarm fatigue" from false alarms with slow, careful movers. |
+| Final colours | Green = more than half of all reps good. Red = half or more bad. Yellow = didn't finish every set. |
+| Demo | Demo mode adds 28 pretend participants. They record reference reps at different speeds, do sets with rests, behave differently, and occasionally ask for help. |
 | Style | Neo-brutalism in CCCARE logo colours (deep blue `#1d6fb8`, navy `#0b3a63`, sky `#8ccff0`, lime `#d6e04b`). |
 
 **Settings** (PIN, alert timings, limits) are all in `src/config.js`.

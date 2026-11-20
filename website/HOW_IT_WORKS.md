@@ -104,8 +104,8 @@ Follow one bicep curl from the arm to the instructor's screen:
    ```
    Normal text lines, and damaged lines, return `null` and are ignored.
 4. **Browser → server.** `join.js` sends `{type: "rep", rep}` over the WebSocket. If the WiFi is down at that moment, the rep goes into `state.unsentReps` and is sent after reconnecting.
-5. **Server checks and stores it.** In `server.js`, `handleParticipantMessage()` calls `session.recordRep(id, rep)`. In `class-session.js`, `cleanRep()` checks every field, because the server never trusts network data blindly. The rep is then added to that participant's list, and the alert rules run (see §7).
-6. **Server → participant.** The server replies `{type: "rep-received", repCount: 3}`, so the join page shows "3 reps sent". It never says good or bad.
+5. **Server checks and stores it.** In `server.js`, `handleParticipantMessage()` calls `session.recordRep(id, rep)`. In `class-session.js`, `cleanRep()` checks every field, because the server never trusts network data blindly. The rep is then tagged with the participant's current set number (`rep.set`), added to their list, and the alert rules run (see §7).
+6. **Server → participant.** The server replies `{type: "rep-received", setRepCount: 3}`, so the join page shows "Set 1 of 2 · 3 / 8 reps". It never says good or bad.
 7. **Server → dashboard.** `recordRep()` emits `"change"`. `server.js` waits 150 ms to group changes together, then sends `{type: "state", state: snapshot}` to every logged-in instructor page.
 8. **Dashboard redraws.** `instructor.js` `render()` rebuilds the stats and cards. A red square appears on that person's card, and "✗ 1 bad" goes up.
 
@@ -136,10 +136,21 @@ The Arduino prints sentences for people, like `Rep 3/8: NEEDS WORK - Lower slowe
 
 | Text | Effect |
 |---|---|
-| `s` | Start a set ("Start my set" button) |
-| `r` | Next rep is the reference rep |
-| `e` | End the set (also sent automatically when the instructor ends the exercise) |
-| `n8` + newline | Reps per set = 8. Sent when the exercise starts, so the strap stops at the instructor's target. |
+| `s` | Start a set ("Start set 1/2…" button, and the first step of recording a reference rep) |
+| `r` | Next rep is the reference rep (sent automatically during the reference step) |
+| `e` | End the set ("End my set", the last step of recording a reference rep, and sent automatically when the instructor ends the exercise) |
+| `n8` + newline | Reps per set = 8. Sent whenever the plan arrives, so the strap stops each set at the instructor's target. |
+
+**How "Record my reference rep" uses the strap.** The Arduino can only save a reference rep during a set, so the join page runs the strap through these steps on its own:
+
+```
+button ─▶ send "s" ─▶ DATA,ZEROING        "Let your arm hang straight down…"
+                   ─▶ DATA,SET_START      send "r"   "Now do ONE slow, controlled rep…"
+                   ─▶ DATA,REF,...        send "e"   "✓ Reference saved - you're ready!"
+                   ─▶ DATA,SET_END,0,0    (ignored: it's the short set used for the reference)
+```
+
+`state.recordingReference` is true from the button press until the REF line arrives, and `state.endingReferenceSet` makes the page ignore the final SET_END so it isn't treated as a real set. If the person presses End, the sensor fails, or the strap is unplugged halfway, the page shows "Cancelled, try again". The reference stays in the Arduino (`CurlTracker.h`) until a new one is recorded or the board resets, so it carries over every set of the exercise.
 
 **How `n8` works on the Arduino:** `handleCommand()` gets one character at a time. After `n`, it sets `readingRepsTarget = true` and builds the number digit by digit (`repsTargetDigits = repsTargetDigits * 10 + digit`). The first non-digit, usually the newline, calls `finishRepsTarget()`, which accepts 1–50.
 
@@ -159,18 +170,23 @@ The Arduino prints sentences for people, like `Rep 3/8: NEEDS WORK - Lower slowe
 | From → to | `type` | Meaning |
 |---|---|---|
 | participant → server | `join` | `{name, previousId}`: join, or rejoin after a drop |
-| | `strap-status` | `{status, detail}`: e.g. "in-set", "error" |
+| | `strap-status` | `{status, detail}`: e.g. "recording-ref", "in-set", "error" |
+| | `reference` | `{reference}`: the four numbers of their reference rep |
+| | `set-start` | The strap started a real set (not the reference one) |
 | | `rep` | `{rep}`: one rep from the strap |
+| | `help` | The "🙋 I need help" button |
 | | `leave` | "Not you? Leave" button |
 | instructor → server | `login` | `{pin}` |
-| | `start-exercise` | `{targetReps}` |
+| | `plan` | `{targetReps, targetSets}`: changed before starting, so participants see it |
+| | `start-exercise` | `{targetReps, targetSets}` |
 | | `end-exercise`, `reset` | End / new round |
 | | `demo` | `{on: true/false}` |
 | | `acknowledge` | `{participantId}`: "Mark as checked" |
 | | `remove-participant` | `{participantId}` |
-| server → participant | `joined` / `join-error` | Result of joining |
-| | `exercise` | `{phase, targetReps}`: the only class info participants get |
+| server → participant | `joined` / `join-error` | Result of joining. `joined` includes their progress (current set, reps this set, reference ready, help requested), so a reloaded page picks up where it left off. |
+| | `exercise` | `{phase, targetReps, targetSets}`: the only class info participants get |
 | | `rep-received` / `rep-rejected` | Reply to each rep |
+| | `help-answered` | The instructor marked them as checked: the help button resets |
 | server → instructor | `login-ok` / `login-failed` | Result of the PIN |
 | | `state` | A full snapshot to redraw from |
 | | `alert` | A pop-up |
@@ -201,15 +217,27 @@ This file is the "brain". It has no network code, which makes it easy to test.
                      ▲                 │
                      └─────Start───────┘   (starting again clears the reps)
 ```
-Reps are only accepted in **RUNNING**. A rep that arrives in another phase is rejected, and the participant is told the exercise hasn't started.
+- **LOBBY:** people join, connect straps and record reference reps. The instructor sets the plan (reps × sets), and the dashboard counts who's ready.
+- **RUNNING:** reps are accepted. Each participant starts their own sets.
+- **FINISHED:** results are shown.
+- **New round** = a new exercise: reps *and* reference reps are cleared.
+- **Start again from FINISHED** = the same exercise again: reps are cleared, but reference reps are kept.
+
+Reps are only accepted in **RUNNING**. A rep that arrives in another phase is rejected, and the participant is told the exercise hasn't started. Nothing starts automatically when everyone is ready, because the instructor decides. One broken strap or one person who stepped away shouldn't hold up a class of 30.
 
 ### What's stored per participant
-`id`, `name`, `simulated`, `online`, `strapStatus`, `strapDetail`, and the per-exercise fields from `newExerciseFields()`: `reps[]`, `lastRepAt`, `badRepsInARow`, `stalledAlertSent`, `needsCheckIn`, `checkInReason` and `result`. Starting a new exercise resets just these per-exercise fields.
+- **Always:** `id`, `name`, `simulated`, `online`, `strapStatus`, `strapDetail`.
+- **Per exercise** (`newReferenceFields()`, cleared by New round): `referenceReady` and `reference`.
+- **Per run** (`newExerciseFields()`, cleared whenever an exercise starts): `reps[]` (each with its `set`), `currentSet`, `setStartedAt`, `setEndedAt`, `lastRepAt`, `badRepsInARow`, `stalledAlertSent`, `needsCheckIn`, `checkInReason`, `helpRequested` and `result`.
+- An unanswered help request is kept when an exercise starts. If someone pressed help in the lobby because their strap won't connect, that request shouldn't vanish.
+
+### Sets
+`startSet(id)` is called when the participant's strap starts a real set. It increases `currentSet`, refusing to go past `targetSets`, and every rep after that is tagged with that set number. If a set-start message got lost, the first rep counts as set 1. The total target is `targetReps × targetSets` (`totalTargetReps`).
 
 ### The rules
 
-**Final colour: `judgeParticipant(reps, targetReps)`**
-1. Fewer reps than the target → **yellow** ("didn't finish"), however good they were.
+**Final colour: `judgeParticipant(reps, totalTargetReps)`**
+1. Fewer reps than all sets need → **yellow** ("didn't finish"), however good they were.
 2. Otherwise, good reps > half → **green** ("good form").
 3. Otherwise → **red** ("needs work"). A 4-good / 4-bad tie counts as red, because it isn't *mostly* good.
 
@@ -218,12 +246,17 @@ Reps are only accepted in **RUNNING**. A rep that arrives in another phase is re
 | Alert | Rule | Where |
 |---|---|---|
 | ⚠ "3 bad reps in a row (Lower slower x2). Check in on them." | `badRepsInARow` hits exactly 3. It only fires once per streak, and a good rep resets the count. | `recordRep()` |
-| ⚠ "hasn't done a rep in 60 s" / "hasn't started yet" | Checked every 5 s. Only for people still short of the target and online, and only once until their next rep. | `checkForStalledParticipants()` |
+| ⚠ "hasn't done a rep in 60 s" / "hasn't started yet" | During a set, no rep for 60 s. Checked every 5 s, only for people still short of the target and online, and only once until their next rep or set. | `checkForStalledParticipants()` |
+| ⚠ "has rested over 2 min after set 1 of 2" | Between sets (`strapStatus` is `set-done`), resting longer than 2 min | `checkForStalledParticipants()` |
+| ⚠ "🙋 Margaret needs help." | The participant pressed "I need help". Pressing again doesn't repeat the alert. | `requestHelp()` |
 | ⚠ "laptop lost connection" | Socket closed while they still had reps to do | `setOnline()` |
 | ⚠ "strap has a problem" / "strap was unplugged" | Strap status changed to `error` or `not-connected` during the exercise | `setStrapStatus()` |
-| ✅ "finished all 8 reps (6 good)" | Rep count reaches the target | `recordRep()` |
+| ✅ "Everyone has recorded their reference rep (20/20)" | The last person in the lobby becomes ready | `setReference()` |
+| ✅ "finished all 2 sets (14/16 good)" | Rep count reaches reps × sets | `recordRep()` |
 
-Warning alerts also set `needsCheckIn`, which puts the red **CHECK IN** sticker on the card and moves it to the front. The sticker stays until the instructor clicks **Mark as checked**.
+**Why 60 s and not 30 s?** A slow, controlled rep for a stroke survivor can take 5–6 s, plus pauses between reps. With 30 people, a 30 s limit would cause lots of false alarms. In healthcare, too many false alarms cause **alarm fatigue**: staff start ignoring alerts and miss the real ones. Rest between sets gets 2 min. Both numbers are in `config.js`.
+
+Warning alerts also set `needsCheckIn`, which puts the red **CHECK IN** sticker (or **🙋 HELP** for help requests) on the card and moves it to the front. It stays until the instructor marks the person as checked, which also resets the participant's help button.
 
 **Names: `cleanName()`** removes invisible control characters, squashes repeated spaces, trims, and limits the length to 30. Matching ignores case, so "sam k." and "Sam K." are the same person.
 - If that person is **online**, a second person can't take the name.
@@ -240,9 +273,12 @@ The constructor takes a `now` function. The server passes the real `Date.now`, w
 
 ## 8. Demo mode (`src/simulator.js`)
 
-Turning on Demo mode adds up to 28 pretend people, with older-adult names to match CCCARE's participants. Twice a second, `tick()` checks whether it's anyone's turn to do a rep.
+Turning on Demo mode adds up to 28 pretend people, with older-adult names to match CCCARE's participants. Twice a second, `tick()` gives each one their next step:
 
-- **Personalities** make the class look realistic: steady (85–92 % good), gets tired (starts at 95 %, drops 12 % per rep), mixed (60 %), struggling (25 %, triggers check-in alerts) and stops partway (quits after 3–5 reps, triggers the "hasn't done a rep" alert).
+- **In the lobby,** each pretend person records a reference rep after a random 3–25 s, so the dashboard's ready counter climbs like a real class.
+- **During the exercise,** they start set 1, do reps every 3–6 s, rest 6–15 s between sets, and start the next set. Demo timings are faster than real life so visitors see things happen.
+- **Personalities** make the class look realistic: steady (85–92 % good), gets tired (starts at 95 %, drops 6 % per rep), mixed (60 %), struggling (25 %, triggers check-in alerts) and stops partway (quits after 5–7 reps, triggers the "hasn't done a rep" alert).
+- **Now and then** (0.4 % chance per rep) someone presses "I need help".
 - **Believable numbers:** `makeRep()` starts from a good rep, then breaks it to match its faults. A `SHORT_RANGE` rep gets a peak of 55–95°, a `SWING` rep gets a swing above 0.55 g, and so on.
 - **Same path as real reps:** pretend reps go through `session.recordRep()`, so alerts and results behave exactly as they would for real people. They're marked `simulated: true` and show a **SIM** badge; real ones show **STRAP**.
 - Turning Demo mode off removes only the pretend people.
@@ -252,11 +288,17 @@ Turning on Demo mode adds up to 28 pretend people, with older-adult names to mat
 ## 9. The participant page (`join.js`)
 
 ### Steps on the page
-1. **Name:** sends `join`. The id and name are saved in `sessionStorage`, so after a WiFi blip or page reload the page automatically rejoins as the same person.
+1. **Name:** sends `join`. The id and name are saved in `sessionStorage`, so after a WiFi blip or page reload the page automatically rejoins as the same person, with the server sending back their progress.
 2. **Strap:**
    - **Connect strap** uses `UsbStrap`. Chrome shows its port picker; if the user closes it, Chrome throws `NotFoundError`, which we ignore quietly.
-   - **Use a pretend one** uses `PretendStrap`, which prints the same DATA lines as the Arduino. You can test the full chain, including the three-laptop setup, without hardware.
-3. **Exercise:** buttons send `s` / `r` / `e` to the strap. They only enable when they make sense. For example, "Start my set" needs the exercise to be running, a strap connected, and no set already in progress.
+   - **Use a pretend one** uses `PretendStrap`, which prints the same DATA lines as the Arduino, including treating the *next* rep as the reference after `r`. You can test the full chain, including the three-laptop setup, without hardware.
+3. **Reference rep:** one button runs the sequence in §5 and ends with a green "✓ Reference saved - you're ready!". The exercise box then says "Wait for your instructor to start". The button changes to "Record a new reference rep" in case it went wrong.
+4. **Exercise:** shows the plan ("Today: 2 sets of 8 reps"), then "Set 1 of 2 · 3 / 8 reps". After each set it says "Set 1 of 2 done ✓ Rest, then press Start set 2", and at the end "All sets done 🎉".
+
+Buttons only enable when they make sense. For example, "Start set N" needs the exercise to be running, a strap connected, no set or reference in progress, and sets left to do. That's what makes participants wait until the instructor presses Start.
+
+### The help button
+"🙋 I need help" is fixed at the bottom of the screen once someone has joined, so it's always in reach. It's deliberately one button with no menu, because older adults (some with dementia or after a stroke) shouldn't have to pick a category. After it's pressed it says "✓ Your instructor has been told - help is coming" and can't be pressed again until the instructor marks them as checked.
 
 ### How the USB reading works (`UsbStrap.readLoop`)
 - The page opens the port at **115200 baud**, the same speed as `Serial.begin(115200)` on the Arduino.
@@ -272,7 +314,7 @@ The page keeps `state.strapStatus` in step with the strap's DATA lines (`zeroing
 - **End exercise:** if a set is still running, the page sends `e` to the strap.
 
 ### What participants see
-Their name, strap status, instructions, and **how many reps were sent**. There's no good/bad, because that's for the instructor. They still get instant feedback from the strap's green/red LED.
+Their name, strap status, instructions, and their **progress** (set and rep count). There's no good/bad, because that's for the instructor. They still get instant feedback from the strap's green/red LED.
 
 ---
 
@@ -280,17 +322,22 @@ Their name, strap status, instructions, and **how many reps were sent**. There's
 
 - **Login:** sends the PIN. On `login-ok`, the PIN is kept in `sessionStorage` so the page logs itself back in if the connection drops, and is forgotten when the tab closes.
 - **Redraw from snapshots:** each `state` message replaces `classState` and calls `render()`, which rebuilds the controls, results banner, stats and cards. With at most 60 cards, rebuilding everything is fast and much simpler than updating pieces.
+- **Plan inputs:** changing reps or sets in the lobby sends `plan`, so participants see the plan straight away. `showPlanValue()` keeps the inputs matching the server, except while the instructor is typing in one.
+- **Start button:** in the lobby it reads "▶ Start exercise (18/20 ready)". If anyone isn't ready, it lists their names and asks "Start anyway?". Nobody is locked out: they can record their reference rep and start late.
+- **Stats:** in the lobby, the second box is "reference rep ready"; during the exercise it's "finished all sets".
 - **Cards** (`personCard`):
   - name and SIM/STRAP badge
-  - strap pill: offline, no strap, getting ready, exercising, set done or sensor problem
-  - rep count against the target
-  - **one square per rep** (green/red, white for reps still to do)
+  - strap pill: offline, no strap, recording reference, getting ready, exercising, set done or sensor problem
+  - **REF ✓ / NO REF** badge
+  - total rep count against reps × sets, and "Set 2 of 2"
+  - **one row of squares per set** (green/red per rep, white for reps still to do)
   - good/bad counts and the main issue
   - "last rep X s ago", updated every 5 s by a timer, using `clockOffset` so the two laptops' clocks don't need to match
   - after the exercise, a background colour **and** a label (GOOD FORM / NEEDS WORK / DIDN'T FINISH), so colour-blind users aren't relying on colour alone
 - **Sorting:** cards that need a check-in go first.
 - **Pop-ups** (`showToast`): appear bottom-right, at most 4 at a time. Warnings stay 12 s and info 6 s. Clicking one opens that person's details.
-- **Details dialog:** a table of every rep (peak angle, up/down time, swing, issues), plus **Mark as checked** and **Remove from class**.
+- **Details dialog:** the person's reference rep numbers, a table of every rep (set, peak angle, up/down time, swing, issues), plus **Mark as checked** and **Remove from class**.
+- **Fast check-ins:** pressing **Enter** anywhere in the dialog runs `checkAndClose()`, which marks the person as checked (if they needed it) and closes the dialog. `event.preventDefault()` stops Enter from also pressing whichever button has focus, so Enter can never accidentally hit "Remove". **Escape** just closes. The quickest flow is: click the pop-up or card, then press Enter.
 - **`el()` helper:** builds page elements in code and always puts text in with `textContent`. If someone types HTML or a script tag as their name, it shows up as plain text and never runs.
 
 ---
@@ -316,6 +363,13 @@ The symposium rubric asks whether the code "handles edge cases, and checks for e
 | HTML or script in a name | Shown as plain text (`textContent`), never run. |
 | Page reloaded or tab duplicated | The new page takes over the same participant, and any old page still open stops with "You joined from another tab". A brand-new tab with the same name gets the duplicate-name message. |
 | Rep sent before the exercise starts | Not counted, and the participant is told why. |
+| End pressed, sensor fails, or strap unplugged during the reference rep | "Cancelled, try again"; the strap's leftover short set is ignored. |
+| Instructor starts before everyone has a reference rep | Warning listing who; those people can record one and start late, and are judged with default targets meanwhile (NO REF badge). |
+| Trying to start more sets than planned | Button disabled on the page; the server also refuses. |
+| Resting between sets | Allowed 2 min before an alert (60 s applies only during a set). |
+| "I need help" pressed repeatedly | One alert only, until the instructor marks them as checked. |
+| Help pressed in the lobby, then the exercise starts | The request is kept, not cleared. |
+| New exercise after a finished set | Status resets from "Set done" to "Strap ready". |
 | Invalid or made-up rep data | Rejected by `cleanRep()`. |
 | Target reps 0, 2.5, "lots", 99 | Rejected: must be a whole number from 1 to 50. |
 | Wrong PIN | "Wrong PIN.", with no data sent. |
@@ -328,29 +382,36 @@ The symposium rubric asks whether the code "handles edge cases, and checks for e
 
 ## 12. Testing
 
-**Automatic tests** (`npm test`, 20 tests in `test/`):
+**Automatic tests** (`npm test`, 27 tests in `test/`):
 - `strap-protocol.test.js`: good and bad reps, multiple faults, Windows `\r` line endings, ignoring normal messages, and rejecting seven kinds of damaged lines.
 - `class-session.test.js`:
-  - the green/red/yellow rule, including the 4–4 tie
+  - the green/red/yellow rule, including the 4–4 tie, and results across all sets
   - name cleaning, duplicate names, reconnecting with reps kept, and the class size limit
   - reps only counted while running, and bad data rejected
-  - target validation
+  - reps/sets validation; the plan can change in the lobby but not mid-exercise
+  - reps tagged with their set, and no extra sets allowed
   - the 3-in-a-row alert firing once and resetting
-  - the stalled alert using the fake clock
-  - results and new rounds
+  - the 60 s no-rep alert and the 2 min rest allowance, using the fake clock
+  - reference reps: the ready count, one "everyone ready" alert, kept on restart, cleared on new round
+  - help requests: alerting once, surviving the exercise starting, clearing when checked
+  - the "Set done" status resetting for a new exercise
   - simulated reps always being valid
 
 **Browser test:** the whole flow was run in headless Chrome:
-- PIN login and joining with a pretend strap
-- reps arriving live, the duplicate-name message, demo mode with 29 people
-- alerts and results, with no browser console errors
+- PIN login, the plan shown to participants, the guided reference rep ending in "you're ready", and Start locked until the instructor starts
+- the "not ready" warning listing names, two full sets with a rest, and "All sets done"
+- the help button, its pop-up and sticker, and Enter marking the person checked and closing the dialog
+- New round asking for new reference reps, and demo mode with references and sets
+- no browser console errors
+
+This testing caught and fixed real bugs: the pretend strap kept making reps after a reference rep, and a finished set showed "Set done" in the next exercise.
 
 **Arduino:** `curl_strap.ino` was compile-checked on a PC with stand-in Arduino headers (`g++ -Wall -Wextra`, no warnings). It still needs testing on the real board; see the checklist below.
 
 **Real-hardware checklist (do before the symposium):**
 1. Upload the sketch and open the Serial Monitor. You should see `DATA,READY` after "BMX160 found".
 2. Close the Serial Monitor, then connect from the join page. The strap pill should show "Connected".
-3. Start an exercise with target 3. The strap should stop after 3 reps, confirming the `n3` command.
+3. Record a reference rep from the join page. You should see "✓ Reference saved". Then start an exercise with 3 reps × 2 sets. The strap should stop each set after 3 reps, confirming the `n3` command.
 4. Unplug the USB mid-set. The join page and dashboard should both show it.
 5. Pull the sensor's SDA wire mid-set. You should see "Sensor problem" and a check-in alert.
 6. Do the three-laptop setup on a phone hotspot (README).
@@ -364,7 +425,7 @@ The symposium rubric asks whether the code "handles edge cases, and checks for e
 - **The PIN is demo-level:** it's sent over plain `http`, and there are no individual accounts. That isn't acceptable for real health data.
 - **One laptop per strap,** because the strap talks over a USB cable.
 - **The website trusts the strap's verdict.** Accuracy depends on `CurlTracker.h`, and the website doesn't re-check it.
-- **One exercise type:** bicep curls only, with one target for the whole class.
+- **One exercise type:** bicep curls only, with one plan (reps × sets) for the whole class.
 
 **What a real product would add:**
 1. Hosted online with **HTTPS** and real instructor logins.
@@ -390,7 +451,16 @@ No. The server only sends class data to connections that logged in with the PIN.
 The dashboard shows them as offline and alerts the instructor. Their page keeps retrying, rejoins as the same person with their reps kept, and sends any reps done while offline.
 
 **"How do you decide red or green?"**
-The strap judges each rep against the person's reference rep. At the end, green means more than half their reps were good, red means half or more were bad, and yellow means they didn't reach the target.
+The strap judges each rep against the person's reference rep. At the end, green means more than half their reps (across all sets) were good, red means half or more were bad, and yellow means they didn't finish every set.
+
+**"Why doesn't the exercise start automatically once everyone's ready?"**
+In a CCCARE class, people move at very different speeds, and some need a volunteer's help to set up. If the site waited for *everyone*, one loose wire would hold up 29 people. So the instructor sees who's ready and decides; latecomers record their reference rep and start when they can.
+
+**"Why a 60-second alert and not shorter?"**
+Older adults and stroke survivors may do slow, careful reps with pauses. A shorter limit would cause false alarms, and too many false alarms lead to alarm fatigue, where staff start ignoring alerts.
+
+**"What if a participant doesn't feel well?"**
+One big "I need help" button alerts the instructor immediately and flags the card. It's deliberately one button with no menu, so it's easy for anyone to use.
 
 **"How did you test it?"**
-20 automatic tests, a scripted browser test of the full flow, a compile check of the Arduino code, plus the hardware checklist and the strap-vs-human comparison from the main README.
+27 automatic tests, a scripted browser test of the full flow, a compile check of the Arduino code, plus the hardware checklist and the strap-vs-human comparison from the main README.
