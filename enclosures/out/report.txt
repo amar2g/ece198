@@ -1,0 +1,31 @@
+OUTSIDE DIMENSIONS (as exported to STEP, mm)
+part              X        Y        Z  solid g
+box_base     164.15    76.80    35.00     67.7
+box_lid      162.65    57.80     2.75     15.8
+wall footprint 164.15 x 60.80, closed height 35.00
+
+FIT CHECKS (intersection volume, mm^3; 0 = no collision)
+  OK   base vs PCB                                   0.0000
+  OK   base vs USB-C receptacle                      0.0000
+  OK   base vs USB-C plug overmold 12.3x6.5          0.0000
+  OK   base vs barrel jack                           0.0000
+  OK   base vs headers                               0.0000
+  OK   base vs Arduino Dupont plugs                  0.0000
+  OK   base vs breadboard                            0.0000
+  OK   base vs IMU board                             0.0000
+  OK   base vs OLED                                  0.0000
+  OK   base vs breadboard jumpers                    0.0000
+  OK   base vs LEDs                                  0.0000
+  OK   base vs closed lid                            0.0000
+  OK   closed lid vs all parts                       0.0000
+  OK   lid slid out 3 mm (no detent)                 0.0000
+  OK   lid slid out 15 mm (no detent)                0.0000
+  OK   lid slid out 40 mm (no detent)                0.0000
+  OK   lid slid out 100 mm (no detent)               0.0000
+
+lid underside z=31.50; tallest part: Dupont top z=29.2, breadboard jumpers z=24.1, IMU top z=14.2
+room above the Arduino Dupont plugs for wires to bend: 2.30 mm
+USB cutout centre y=40.90 z=8.30 (on port); margin round 12.3x6.5 plug 0.85 / 1.25
+detent interference 0.25; LED window 74x40 at x=117.25 y=30.40 (shifted 2.25 to clear grip)
+flange 8 each long side, 27 stitching holes per side @ 6
+ALL CHECKS PASS
