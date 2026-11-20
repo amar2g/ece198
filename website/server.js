@@ -76,13 +76,23 @@ function handleJoin(socket, { name, previousId }) {
   socket.participantId = participant.id;
   participantSockets.set(participant.id, socket);
 
+  // everything the page needs to pick up where it left off after a reload
   send(socket, {
     type: "joined",
     id: participant.id,
     name: participant.name,
-    repCount: participant.reps.length,
     exercise: session.exerciseInfo(),
+    progress: participantProgress(participant),
   });
+}
+
+function participantProgress(participant) {
+  return {
+    currentSet: participant.currentSet,
+    setRepCount: participant.reps.filter((r) => r.set === participant.currentSet).length,
+    referenceReady: participant.referenceReady,
+    helpRequested: participant.helpRequested,
+  };
 }
 
 function handleParticipantMessage(socket, message) {
@@ -91,11 +101,17 @@ function handleParticipantMessage(socket, message) {
 
   if (message.type === "strap-status") {
     session.setStrapStatus(id, message.status, message.detail);
+  } else if (message.type === "set-start") {
+    session.startSet(id);
   } else if (message.type === "rep") {
     const result = session.recordRep(id, message.rep);
     send(socket, result.ok
-      ? { type: "rep-received", repCount: result.repCount }
+      ? { type: "rep-received", setRepCount: result.setRepCount }
       : { type: "rep-rejected", reason: result.reason });
+  } else if (message.type === "reference") {
+    session.setReference(id, message.reference);
+  } else if (message.type === "help") {
+    session.requestHelp(id);
   } else if (message.type === "leave") {
     participantSockets.delete(id);
     socket.participantId = null;
@@ -113,6 +129,8 @@ function handleLogin(socket, { pin }) {
     type: "login-ok",
     minTargetReps: SETTINGS.minTargetReps,
     maxTargetReps: SETTINGS.maxTargetReps,
+    minTargetSets: SETTINGS.minTargetSets,
+    maxTargetSets: SETTINGS.maxTargetSets,
     joinAddresses: joinAddresses(),
   });
   send(socket, { type: "state", state: session.snapshot() });
@@ -123,11 +141,15 @@ function handleInstructorMessage(socket, message) {
   const id = String(message.participantId);
 
   switch (message.type) {
-    case "start-exercise": result = session.startExercise(message.targetReps); break;
+    case "plan": result = session.setPlan(message.targetReps, message.targetSets); break;
+    case "start-exercise": result = session.startExercise(message.targetReps, message.targetSets); break;
     case "end-exercise": result = session.endExercise(); break;
     case "reset": result = session.resetToLobby(); break;
     case "demo": message.on ? simulator.start() : simulator.stop(); break;
-    case "acknowledge": session.acknowledgeCheckIn(id); break;
+    case "acknowledge":
+      session.acknowledgeCheckIn(id);
+      if (participantSockets.has(id)) send(participantSockets.get(id), { type: "help-answered" });
+      break;
     case "remove-participant":
       participantSockets.get(id)?.close(4001, "Removed by instructor");
       participantSockets.delete(id);

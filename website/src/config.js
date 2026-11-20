@@ -9,11 +9,16 @@ export const SETTINGS = {
   minTargetReps: 1,
   maxTargetReps: 50, // same limit as MAX_REPS_PER_SET in curl_strap.ino
 
+  defaultTargetSets: 2,
+  minTargetSets: 1,
+  maxTargetSets: 5,
+
   maxParticipants: 60,
   maxNameLength: 30,
 
   badRepsInARowForAlert: 3,
-  stalledSeconds: 60, // alert if no rep for this long
+  stalledSeconds: 60,           // alert if no rep for this long during a set
+  restBetweenSetsSeconds: 120,  // alert if resting between sets for longer than this
 
   simulatedParticipants: 28, // demo mode
 };

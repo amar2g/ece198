@@ -76,6 +76,7 @@ export class PretendStrap {
     this.mode = "IDLE"; // IDLE, ZEROING or SET
     this.repsDone = 0;
     this.goodDone = 0;
+    this.nextRepIsReference = false;
     this.timer = null;
   }
 
@@ -109,13 +110,19 @@ export class PretendStrap {
       this.mode = "IDLE";
       clearTimeout(this.timer);
     } else if (command === "r" && this.mode === "SET") {
-      this.onLine("DATA,REF,128.0,0.80,1.30,0.12");
+      this.nextRepIsReference = true; // like the real strap: the NEXT rep becomes the reference
     }
   }
 
   // A rep every 2.5-4.5 s, about 2 in 3 good
   nextRep() {
     this.later(2500 + Math.random() * 2000, () => {
+      if (this.mode !== "SET") return; // set was ended meanwhile
+      if (this.nextRepIsReference) {
+        this.nextRepIsReference = false;
+        this.onLine("DATA,REF,128.0,0.80,1.30,0.12");
+        return this.nextRep();
+      }
       this.repsDone++;
       const good = Math.random() < 0.65;
       if (good) this.goodDone++;

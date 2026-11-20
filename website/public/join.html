@@ -67,22 +67,33 @@
       <div id="strap-message" class="message-box hidden"></div>
     </section>
 
-    <!-- STEP 3: exercise -->
+    <!-- STEP 3: reference rep -->
+    <section class="panel" id="reference-panel">
+      <div class="panel-title"><span class="step-number">3</span><h2>Record your reference rep</h2></div>
+      <p class="muted">
+        Do <strong>one</strong> rep the way your kinesiologist showed you. Your reps today are
+        compared to this one. You only need to do it once per exercise.
+      </p>
+      <button id="reference-button" class="button button-big button-blue" type="button" disabled>● Record my reference rep</button>
+      <div id="reference-message" class="message-box hidden"></div>
+    </section>
+
+    <!-- STEP 4: exercise -->
     <section class="panel" id="exercise-panel">
-      <div class="panel-title"><span class="step-number">3</span><h2>Exercise</h2></div>
+      <div class="panel-title"><span class="step-number">4</span><h2>Exercise</h2></div>
       <p id="exercise-text" class="message-box message-info">Join the class first.</p>
 
-      <div class="row" style="margin-top:1rem">
-        <button id="start-set-button" class="button button-big" type="button" disabled>▶ Start my set</button>
-        <button id="reference-button" class="button button-blue" type="button" disabled>Record reference rep</button>
-        <button id="end-set-button" class="button button-white" type="button" disabled>End my set</button>
+      <div class="row" style="margin-top:1rem; align-items:baseline">
+        <span id="set-label" class="badge" style="font-size:1rem"></span>
+        <span class="big-number" id="set-reps">0</span>
+        <span id="set-target"></span>
       </div>
 
-      <div class="row" style="margin-top:1.25rem; align-items:baseline">
-        <span class="big-number" id="reps-sent">0</span>
-        <span>reps sent to your instructor</span>
+      <div class="row" style="margin-top:1rem">
+        <button id="start-set-button" class="button button-big" type="button" disabled>▶ Start set 1</button>
+        <button id="end-set-button" class="button button-white" type="button" disabled>End my set</button>
       </div>
-      <p class="small muted">
+      <p class="small muted" style="margin-top:1rem">
         The strap's light shows how each rep went: <strong>green</strong> = good,
         <strong>red</strong> = needs work. Your instructor sees the details.
       </p>
@@ -92,6 +103,9 @@
         <pre id="strap-log" class="strap-log" aria-live="off"></pre>
       </details>
     </section>
+
+    <!-- Help: one big button, always there once joined -->
+    <button id="help-button" class="button button-big help-button hidden" type="button">🙋 I need help</button>
   </main>
 </body>
 </html>

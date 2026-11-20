@@ -43,6 +43,10 @@
             <label for="target-input">Target reps</label>
             <input id="target-input" type="number" min="1" max="50" value="8">
           </div>
+          <div class="field">
+            <label for="sets-input">Sets</label>
+            <input id="sets-input" type="number" min="1" max="5" value="2">
+          </div>
           <button id="start-button" class="button button-big" type="button">▶ Start exercise</button>
           <button id="end-button" class="button button-big button-red" type="button">■ End exercise</button>
           <button id="reset-button" class="button button-white" type="button">New round</button>
@@ -69,14 +73,15 @@
       <span id="dialog-badge" class="badge"></span>
     </div>
     <p id="dialog-summary"></p>
+    <p id="dialog-reference" class="small"></p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>#</th><th>Result</th><th>Peak (°)</th><th>Up (s)</th><th>Down (s)</th><th>Swing (g)</th><th>Issues</th></tr></thead>
+        <thead><tr><th>Set</th><th>#</th><th>Result</th><th>Peak (°)</th><th>Up (s)</th><th>Down (s)</th><th>Swing (g)</th><th>Issues</th></tr></thead>
         <tbody id="dialog-reps"></tbody>
       </table>
     </div>
     <div class="row" style="margin-top:1rem">
-      <button id="dialog-checked" class="button" type="button">✓ Mark as checked</button>
+      <button id="dialog-checked" class="button" type="button">✓ Mark as checked (Enter)</button>
       <button id="dialog-remove" class="button button-red button-small" type="button">Remove from class</button>
       <button id="dialog-close" class="button button-white" type="button" style="margin-left:auto">Close</button>
     </div>

@@ -1,5 +1,6 @@
 // Demo mode: pretend participants so a full class can be shown with only a few real straps.
-// Their reps go through session.recordRep() just like real ones.
+// They record reference reps, do sets with rests, and sometimes ask for help -
+// all through the same ClassSession methods as real participants.
 
 import { PHASE } from "./class-session.js";
 
@@ -15,14 +16,19 @@ const NAMES = [
 const PERSONALITIES = [
   { goodChance: 0.92, tiresBy: 0, stopsAfter: null },    // steady
   { goodChance: 0.85, tiresBy: 0, stopsAfter: null },    // steady
-  { goodChance: 0.95, tiresBy: 0.12, stopsAfter: null }, // gets tired
+  { goodChance: 0.95, tiresBy: 0.06, stopsAfter: null }, // gets tired
   { goodChance: 0.6, tiresBy: 0, stopsAfter: null },     // mixed
   { goodChance: 0.25, tiresBy: 0, stopsAfter: null },    // struggling
-  { goodChance: 0.7, tiresBy: 0, stopsAfter: 3 },        // stops partway
+  { goodChance: 0.7, tiresBy: 0, stopsAfter: 5 },        // stops partway
 ];
 
-const SECONDS_BETWEEN_REPS = [3.5, 6.5];
-const SECONDS_BEFORE_FIRST_REP = [2, 12];
+// Demo timings are shorter than real life so visitors see things happen
+const SECONDS_TO_RECORD_REFERENCE = [3, 25];
+const SECONDS_BEFORE_FIRST_REP = [2, 10];
+const SECONDS_BETWEEN_REPS = [3, 6];
+const SECONDS_OF_REST = [6, 15];
+const HELP_CHANCE_PER_REP = 0.004; // now and then someone presses "I need help"
+
 const FAULT_CHANCES = { LOWER_FAST: 0.4, SHORT_RANGE: 0.3, SWING: 0.2, LIFT_FAST: 0.1 };
 const FAULT_ORDER = ["SHORT_RANGE", "LIFT_FAST", "LOWER_FAST", "SWING"]; // order the strap prints them
 
@@ -31,7 +37,7 @@ export class Simulator {
     this.session = session;
     this.count = Math.min(count, NAMES.length);
     this.random = random;
-    this.people = []; // { participantId, personality, goodChance, nextRepAt, stopsAfter }
+    this.people = []; // { participantId, personality, ...current plan }
     this.timer = null;
     this.planFor = null; // start time of the exercise the current plans are for
   }
@@ -60,33 +66,68 @@ export class Simulator {
     this.session.emit("change");
   }
 
-  // Twice a second: anyone whose turn it is does a rep
+  // Twice a second: anyone whose turn it is does their next step
   tick() {
     const { session } = this;
-    if (session.phase !== PHASE.RUNNING) return;
-    if (this.planFor !== session.exerciseStartedAt) {
-      this.planFor = session.exerciseStartedAt;
-      this.people.forEach((person) => this.planExercise(person));
-    }
-
     for (const person of this.people) {
       const participant = session.participants.get(person.participantId);
-      if (!participant || session.now() < person.nextRepAt) continue;
-      const done = participant.reps.length;
-      if (done >= session.targetReps || (person.stopsAfter !== null && done >= person.stopsAfter)) continue;
+      if (!participant) continue;
+      if (session.phase !== PHASE.FINISHED) this.recordReferenceWhenReady(person, participant);
+      if (session.phase === PHASE.RUNNING) this.exercise(person, participant);
+    }
+  }
 
-      if (done === 0) session.setStrapStatus(participant.id, "in-set");
-      session.recordRep(participant.id, this.makeRep(person.goodChance));
-      person.goodChance = Math.max(0.05, person.goodChance - person.personality.tiresBy);
-      person.nextRepAt = session.now() + this.between(SECONDS_BETWEEN_REPS) * 1000;
-      if (participant.reps.length >= session.targetReps) session.setStrapStatus(participant.id, "set-done");
+  // Each pretend person takes a different amount of time to record their reference rep
+  recordReferenceWhenReady(person, participant) {
+    if (participant.referenceReady) {
+      person.referenceAt = null;
+      return;
+    }
+    const now = this.session.now();
+    person.referenceAt ??= now + this.between(SECONDS_TO_RECORD_REFERENCE) * 1000;
+    if (now >= person.referenceAt) {
+      this.session.setReference(participant.id, { peakDeg: 128, liftSec: 0.8, lowerSec: 1.3, swingG: 0.12 });
+    }
+  }
+
+  exercise(person, participant) {
+    const { session } = this;
+    if (this.planFor !== session.exerciseStartedAt) { // a new exercise started
+      this.planFor = session.exerciseStartedAt;
+      this.people.forEach((p) => this.planExercise(p));
+    }
+    const now = session.now();
+    if (now < person.nextActionAt) return;
+
+    const done = participant.reps.length;
+    const gaveUp = person.stopsAfter !== null && done >= person.stopsAfter;
+    if (done >= session.totalTargetReps || gaveUp) return;
+
+    // Between sets (or before the first): start the next set
+    const repsThisSet = participant.reps.filter((r) => r.set === participant.currentSet).length;
+    if (participant.currentSet === 0 || repsThisSet >= session.targetReps) {
+      session.startSet(participant.id);
+      session.setStrapStatus(participant.id, "in-set");
+      person.nextActionAt = now + this.between(SECONDS_BETWEEN_REPS) * 1000;
+      return;
+    }
+
+    session.recordRep(participant.id, this.makeRep(person.goodChance));
+    person.goodChance = Math.max(0.05, person.goodChance - person.personality.tiresBy);
+    if (this.random() < HELP_CHANCE_PER_REP) session.requestHelp(participant.id);
+
+    if (repsThisSet + 1 >= session.targetReps) { // set finished: rest
+      session.setStrapStatus(participant.id, "set-done");
+      person.nextActionAt = now + this.between(SECONDS_OF_REST) * 1000;
+    } else {
+      person.nextActionAt = now + this.between(SECONDS_BETWEEN_REPS) * 1000;
     }
   }
 
   planExercise(person) {
     const { stopsAfter, goodChance } = person.personality;
     person.goodChance = goodChance;
-    person.nextRepAt = this.session.now() + this.between(SECONDS_BEFORE_FIRST_REP) * 1000;
+    person.nextActionAt = this.session.now() + this.between(SECONDS_BEFORE_FIRST_REP) * 1000;
     person.stopsAfter = stopsAfter === null ? null : stopsAfter + Math.floor(this.random() * 3);
     this.session.setStrapStatus(person.participantId, "zeroing");
   }
