@@ -9,14 +9,9 @@
 //   i  show the current targets
 //   t  test the green and red LEDs
 //   h  show this help
-//   n  followed by a number, e.g. n10: set how many reps make a set
-//      (the instructor website sends this so the strap matches its target)
+//   n  then a number, e.g. n10: reps per set (the website sends this)
 // A set finishes by itself after repsPerSet reps (or type e).
-//
-// Website link: besides the human-readable messages, every event is also
-// printed as one comma-separated line starting with "DATA," (see the
-// "website data lines" section below). The website reads only those lines,
-// so the normal messages can be reworded without breaking it.
+// Each event is also printed as a "DATA,..." line for the website.
 // Feedback after every rep:
 //   green LED (pin 2) on for 1 s = good rep, red LED (pin 3) on for 1 s = needs work.
 //   The board's built-in LED (marked "L") also lights for 1 s after a good rep
@@ -74,7 +69,7 @@ curl::Vec3 gyroBias = {0, 0, 0};
 float restMag = 1.0f;  // accel size at rest; readings are divided by it so 1 g reads as exactly 1
 uint32_t zeroStartedAt = 0, lastStillWarning = 0;
 
-// "n" command: digits typed after the n are collected here until Enter.
+// "n" command: digits after the n are collected until Enter
 bool readingRepsTarget = false;
 int repsTargetDigits = 0;
 
@@ -204,23 +199,15 @@ void ledSelfTest() {
 }
 
 // ---------- website data lines ----------
-// One line per event, fields separated by commas, always starting with DATA.
-// The website (website/public/js/strap-protocol.js) reads these. If you add
-// or change a line here, update that file too.
-//
-//   DATA,READY                          sensor found, waiting for a set
-//   DATA,STATUS,<mode>,<repsPerSet>     reply to "i"; mode = IDLE, ZEROING or SET
-//   DATA,ZEROING                        "s" typed, waiting for the arm to be still
-//   DATA,SET_START,<repsPerSet>         arm was still, set has begun
-//   DATA,REF,<peak>,<up>,<down>,<swing> reference rep saved (not counted)
-//   DATA,REP,<n>,<GOOD|BAD>,<peak>,<up>,<down>,<swing>,<faults>
-//                                       faults = NONE or names joined by |,
-//                                       e.g. SHORT_RANGE|LOWER_FAST
-//   DATA,SET_END,<reps>,<good>          set finished
-//   DATA,SET_CANCELLED                  "e" typed before the set began
-//   DATA,REPS_PER_SET,<n>               reply to the "n" command
-//   DATA,ERROR,<code>                   SENSOR_NOT_FOUND, SENSOR_LOST or BAD_REPS_PER_SET
-//   DATA,SENSOR_OK                      sensor answering again after SENSOR_LOST
+// Read by website/public/js/strap-protocol.js - keep the two in sync.
+//   DATA,READY
+//   DATA,ZEROING
+//   DATA,SET_START,<repsPerSet>
+//   DATA,REF,<peak>,<up>,<down>,<swing>
+//   DATA,REP,<n>,<GOOD|BAD>,<peak>,<up>,<down>,<swing>,<faults>   faults: NONE or A|B
+//   DATA,SET_END,<reps>,<good>
+//   DATA,SET_CANCELLED
+//   DATA,ERROR,<SENSOR_NOT_FOUND|SENSOR_LOST>
 
 void printRepNumbers(const curl::RepResult& r) {
   Serial.print(r.peakDeg, 1);
@@ -238,7 +225,6 @@ void printFaultNames(uint8_t faults) {
     return;
   }
   bool first = true;
-  // Helper: prints "|" between names, but not before the first one.
   auto printName = [&](const char* name) {
     if (!first) Serial.print('|');
     Serial.print(name);
@@ -264,15 +250,6 @@ void sendDataReference(const curl::RepResult& r) {
   Serial.print("DATA,REF,");
   printRepNumbers(r);
   Serial.println();
-}
-
-void sendDataStatus() {
-  Serial.print("DATA,STATUS,");
-  if (mode == MODE_IDLE) Serial.print("IDLE");
-  else if (mode == MODE_ZEROING) Serial.print("ZEROING");
-  else Serial.print("SET");
-  Serial.print(',');
-  Serial.println(repsPerSet);
 }
 
 // ---------- messages ----------
@@ -381,7 +358,6 @@ void endSet() {
   Serial.println("Type s to start another set.");
 }
 
-// Called when the number after "n" is complete (Enter or another letter).
 void finishRepsTarget() {
   readingRepsTarget = false;
   if (repsTargetDigits >= MIN_REPS_PER_SET && repsTargetDigits <= MAX_REPS_PER_SET) {
@@ -389,21 +365,17 @@ void finishRepsTarget() {
     Serial.print("Set length is now ");
     Serial.print(repsPerSet);
     Serial.println(" reps.");
-    Serial.print("DATA,REPS_PER_SET,");
-    Serial.println(repsPerSet);
   } else {
     Serial.print("Reps per set must be ");
     Serial.print(MIN_REPS_PER_SET);
     Serial.print("-");
     Serial.print(MAX_REPS_PER_SET);
     Serial.println(", e.g. n10");
-    Serial.println("DATA,ERROR,BAD_REPS_PER_SET");
   }
 }
 
 void handleCommand(char c) {
-  // While reading the number after "n", collect digits. Any other character
-  // (normally Enter) ends the number, and is then handled as usual below.
+  // After "n": collect digits; any other key (e.g. Enter) ends the number
   if (readingRepsTarget) {
     if (c >= '0' && c <= '9') {
       if (repsTargetDigits < 1000) repsTargetDigits = repsTargetDigits * 10 + (c - '0');
@@ -439,7 +411,6 @@ void handleCommand(char c) {
       break;
     case 'i': case 'I':
       printTargets();
-      sendDataStatus();  // the website sends "i" when it connects, to learn the state
       break;
     case 't': case 'T':
       Serial.println("LED test: green, then red, then the L LED...");
@@ -465,7 +436,6 @@ void onSample() {
     }
     return;
   }
-  if (sensorErrorShown) Serial.println("DATA,SENSOR_OK");  // a loose wire came back
   sensorErrorShown = false;
   float t = millis() / 1000.0f;
 
@@ -575,7 +545,7 @@ void setup() {
       blinkOn = !blinkOn;
       digitalWrite(STATUS_LED, blinkOn ? HIGH : LOW);
       digitalWrite(RED_LED, blinkOn ? HIGH : LOW);
-      // Repeat the error every 2 s, so a website that connects later still sees it.
+      // repeat every 2 s so a website that connects late still sees it
       if (++blinkCount % 20 == 0) Serial.println("DATA,ERROR,SENSOR_NOT_FOUND");
       delay(100);
     }
