@@ -9,7 +9,14 @@
 //   i  show the current targets
 //   t  test the green and red LEDs
 //   h  show this help
-// A set finishes by itself after REPS_PER_SET reps (or type e).
+//   n  followed by a number, e.g. n10: set how many reps make a set
+//      (the instructor website sends this so the strap matches its target)
+// A set finishes by itself after repsPerSet reps (or type e).
+//
+// Website link: besides the human-readable messages, every event is also
+// printed as one comma-separated line starting with "DATA," (see the
+// "website data lines" section below). The website reads only those lines,
+// so the normal messages can be reworded without breaking it.
 // Feedback after every rep:
 //   green LED (pin 2) on for 1 s = good rep, red LED (pin 3) on for 1 s = needs work.
 //   The board's built-in LED (marked "L") also lights for 1 s after a good rep
@@ -30,7 +37,9 @@ const int STATUS_LED = LED_BUILTIN;
 const int GREEN_LED = 2;   // optional external LED + 470 ohm resistor to GND
 const int RED_LED = 3;     // optional external LED + 470 ohm resistor to GND
 const uint32_t COLOR_LED_MS = 1000;  // how long green/red stays on after a rep
-const int REPS_PER_SET = 8;          // set finishes by itself after this many reps
+int repsPerSet = 8;                  // set finishes by itself after this many reps
+const int MIN_REPS_PER_SET = 1;      // limits for the "n" command
+const int MAX_REPS_PER_SET = 50;
 
 // ---------- BMX160 registers (same map as the Bosch BMI160 for accel/gyro) ----------
 const uint8_t REG_CHIP_ID = 0x00;   // reads 0xD8 on a BMX160
@@ -64,6 +73,10 @@ curl::Vec3 zeroAcc = {0, 0, 0}, zeroGyr = {0, 0, 0};
 curl::Vec3 gyroBias = {0, 0, 0};
 float restMag = 1.0f;  // accel size at rest; readings are divided by it so 1 g reads as exactly 1
 uint32_t zeroStartedAt = 0, lastStillWarning = 0;
+
+// "n" command: digits typed after the n are collected here until Enter.
+bool readingRepsTarget = false;
+int repsTargetDigits = 0;
 
 // LED feedback
 int ledToggles = 0;
@@ -190,6 +203,78 @@ void ledSelfTest() {
   digitalWrite(STATUS_LED, HIGH); delay(400); digitalWrite(STATUS_LED, LOW);
 }
 
+// ---------- website data lines ----------
+// One line per event, fields separated by commas, always starting with DATA.
+// The website (website/public/js/strap-protocol.js) reads these. If you add
+// or change a line here, update that file too.
+//
+//   DATA,READY                          sensor found, waiting for a set
+//   DATA,STATUS,<mode>,<repsPerSet>     reply to "i"; mode = IDLE, ZEROING or SET
+//   DATA,ZEROING                        "s" typed, waiting for the arm to be still
+//   DATA,SET_START,<repsPerSet>         arm was still, set has begun
+//   DATA,REF,<peak>,<up>,<down>,<swing> reference rep saved (not counted)
+//   DATA,REP,<n>,<GOOD|BAD>,<peak>,<up>,<down>,<swing>,<faults>
+//                                       faults = NONE or names joined by |,
+//                                       e.g. SHORT_RANGE|LOWER_FAST
+//   DATA,SET_END,<reps>,<good>          set finished
+//   DATA,SET_CANCELLED                  "e" typed before the set began
+//   DATA,REPS_PER_SET,<n>               reply to the "n" command
+//   DATA,ERROR,<code>                   SENSOR_NOT_FOUND, SENSOR_LOST or BAD_REPS_PER_SET
+//   DATA,SENSOR_OK                      sensor answering again after SENSOR_LOST
+
+void printRepNumbers(const curl::RepResult& r) {
+  Serial.print(r.peakDeg, 1);
+  Serial.print(',');
+  Serial.print(r.liftSec, 2);
+  Serial.print(',');
+  Serial.print(r.lowerSec, 2);
+  Serial.print(',');
+  Serial.print(r.swingG, 2);
+}
+
+void printFaultNames(uint8_t faults) {
+  if (faults == curl::FAULT_NONE) {
+    Serial.print("NONE");
+    return;
+  }
+  bool first = true;
+  // Helper: prints "|" between names, but not before the first one.
+  auto printName = [&](const char* name) {
+    if (!first) Serial.print('|');
+    Serial.print(name);
+    first = false;
+  };
+  if (faults & curl::FAULT_SHORT_RANGE) printName("SHORT_RANGE");
+  if (faults & curl::FAULT_LIFT_FAST) printName("LIFT_FAST");
+  if (faults & curl::FAULT_LOWER_FAST) printName("LOWER_FAST");
+  if (faults & curl::FAULT_SWING) printName("SWING");
+}
+
+void sendDataRep(const curl::RepResult& r) {
+  Serial.print("DATA,REP,");
+  Serial.print(r.number);
+  Serial.print(r.good ? ",GOOD," : ",BAD,");
+  printRepNumbers(r);
+  Serial.print(',');
+  printFaultNames(r.faults);
+  Serial.println();
+}
+
+void sendDataReference(const curl::RepResult& r) {
+  Serial.print("DATA,REF,");
+  printRepNumbers(r);
+  Serial.println();
+}
+
+void sendDataStatus() {
+  Serial.print("DATA,STATUS,");
+  if (mode == MODE_IDLE) Serial.print("IDLE");
+  else if (mode == MODE_ZEROING) Serial.print("ZEROING");
+  else Serial.print("SET");
+  Serial.print(',');
+  Serial.println(repsPerSet);
+}
+
 // ---------- messages ----------
 void printHelp() {
   Serial.println();
@@ -200,6 +285,7 @@ void printHelp() {
   Serial.println("  p = live angle graph on/off (open Tools > Serial Plotter)");
   Serial.println("  i = show current targets");
   Serial.println("  t = test the LEDs (green, then red, then the L LED)");
+  Serial.println("  n = reps per set, e.g. n10 then Enter");
   Serial.println("  h = show this help");
   Serial.println();
 }
@@ -219,7 +305,7 @@ void printTargets() {
   Serial.print("  swing:  <= ");       Serial.print(tracker.maxSwing(), 2);
   Serial.print(" g      (target "); Serial.print(s.maxSwingG, 2);
   Serial.print(" +/- "); Serial.print(s.swingTol, 2); Serial.println(" g)");
-  Serial.print("Set length: "); Serial.print(REPS_PER_SET); Serial.println(" reps");
+  Serial.print("Set length: "); Serial.print(repsPerSet); Serial.println(" reps");
   Serial.println(tracker.hasReference() ? "(set from this patient's reference rep)"
                                         : "(default targets - no reference rep yet)");
 }
@@ -264,12 +350,14 @@ void startZeroing() {
   zeroStartedAt = lastStillWarning = millis();
   Serial.println();
   Serial.println("GET READY: let the arm hang straight down and keep it still...");
+  Serial.println("DATA,ZEROING");
 }
 
 void endSet() {
   if (mode == MODE_ZEROING) {
     mode = MODE_IDLE;
     Serial.println("Cancelled.");
+    Serial.println("DATA,SET_CANCELLED");
     return;
   }
   mode = MODE_IDLE;
@@ -286,11 +374,49 @@ void endSet() {
     Serial.print("%)");
   }
   Serial.println();
+  Serial.print("DATA,SET_END,");
+  Serial.print(reps);
+  Serial.print(',');
+  Serial.println(good);
   Serial.println("Type s to start another set.");
 }
 
+// Called when the number after "n" is complete (Enter or another letter).
+void finishRepsTarget() {
+  readingRepsTarget = false;
+  if (repsTargetDigits >= MIN_REPS_PER_SET && repsTargetDigits <= MAX_REPS_PER_SET) {
+    repsPerSet = repsTargetDigits;
+    Serial.print("Set length is now ");
+    Serial.print(repsPerSet);
+    Serial.println(" reps.");
+    Serial.print("DATA,REPS_PER_SET,");
+    Serial.println(repsPerSet);
+  } else {
+    Serial.print("Reps per set must be ");
+    Serial.print(MIN_REPS_PER_SET);
+    Serial.print("-");
+    Serial.print(MAX_REPS_PER_SET);
+    Serial.println(", e.g. n10");
+    Serial.println("DATA,ERROR,BAD_REPS_PER_SET");
+  }
+}
+
 void handleCommand(char c) {
+  // While reading the number after "n", collect digits. Any other character
+  // (normally Enter) ends the number, and is then handled as usual below.
+  if (readingRepsTarget) {
+    if (c >= '0' && c <= '9') {
+      if (repsTargetDigits < 1000) repsTargetDigits = repsTargetDigits * 10 + (c - '0');
+      return;
+    }
+    finishRepsTarget();
+  }
+
   switch (c) {
+    case 'n': case 'N':
+      readingRepsTarget = true;
+      repsTargetDigits = 0;
+      break;
     case 's': case 'S':
       if (mode == MODE_IDLE) startZeroing();
       else Serial.println("A set is already running. Type e to end it first.");
@@ -313,6 +439,7 @@ void handleCommand(char c) {
       break;
     case 'i': case 'I':
       printTargets();
+      sendDataStatus();  // the website sends "i" when it connects, to learn the state
       break;
     case 't': case 'T':
       Serial.println("LED test: green, then red, then the L LED...");
@@ -333,10 +460,12 @@ void onSample() {
   if (!readSensor(a, g)) {
     if (!sensorErrorShown) {
       Serial.println("ERROR: lost contact with the BMX160. Check the wires, then press the board's RESET button.");
+      Serial.println("DATA,ERROR,SENSOR_LOST");
       sensorErrorShown = true;
     }
     return;
   }
+  if (sensorErrorShown) Serial.println("DATA,SENSOR_OK");  // a loose wire came back
   sensorErrorShown = false;
   float t = millis() / 1000.0f;
 
@@ -368,6 +497,8 @@ void onSample() {
       tracker.beginSet({rest.x / restMag, rest.y / restMag, rest.z / restMag});
       mode = MODE_SET;
       Serial.println("GO! Start curling. (type r for a reference rep, e to end the set)");
+      Serial.print("DATA,SET_START,");
+      Serial.println(repsPerSet);
       printTargets();
     }
     return;
@@ -383,13 +514,14 @@ void onSample() {
       ledGood();
       Serial.println("REFERENCE REP SAVED.");
       printRepDetails(r);
+      sendDataReference(r);
       printTargets();
     } else {
       if (r.good) ledGood(); else ledBad();
       Serial.print("Rep ");
       Serial.print(r.number);
       Serial.print("/");
-      Serial.print(REPS_PER_SET);
+      Serial.print(repsPerSet);
       Serial.print(": ");
       if (r.good) {
         Serial.println("GOOD");
@@ -399,7 +531,8 @@ void onSample() {
         printFaults(r);
       }
       printRepDetails(r);
-      if (r.number >= REPS_PER_SET) {
+      sendDataRep(r);
+      if (r.number >= repsPerSet) {
         Serial.println("That's the set!");
         endSet();
         return;
@@ -437,15 +570,19 @@ void setup() {
     scanBus();
     Serial.println("Fix the wiring, then press the RESET button on the Arduino.");
     bool blinkOn = false;
+    int blinkCount = 0;
     while (true) {  // fast blink (L LED and red LED) = sensor problem
       blinkOn = !blinkOn;
       digitalWrite(STATUS_LED, blinkOn ? HIGH : LOW);
       digitalWrite(RED_LED, blinkOn ? HIGH : LOW);
+      // Repeat the error every 2 s, so a website that connects later still sees it.
+      if (++blinkCount % 20 == 0) Serial.println("DATA,ERROR,SENSOR_NOT_FOUND");
       delay(100);
     }
   }
   Serial.print("BMX160 found at address 0x");
   Serial.println(sensorAddr, HEX);
+  Serial.println("DATA,READY");
   printHelp();
   Serial.println("Type s and press Enter to start a set.");
 }
