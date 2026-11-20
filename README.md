@@ -18,6 +18,7 @@ A strap on the forearm that counts bicep curls and tells you whether each rep wa
 | 4 jumper wires, male to female | Male end into the Arduino, female end onto the sensor's pins. Use the longest you have (20–30 cm or more), because the sensor goes on the arm and the Arduino stays on the table. |
 | Strap material | Velcro strap, elastic band, sweatband, or tape |
 | Green LED, red LED, 2 × 470 Ω resistors (optional) | For the green/red rep feedback. Any resistor from 470 Ω to 1 kΩ works. |
+| 0.96″ OLED screen, SSD1306 128×64, I2C (optional) | Shows the rep count and result. 4 pins: GND, VCC, SCL, SDA. |
 | Breadboard (optional) | Makes the LEDs and sensor easy to wire |
 | Laptop | Must have the Arduino IDE |
 
@@ -56,7 +57,9 @@ Inside you'll find:
 2. Open it and click the **Boards Manager** icon on the left (second from the top, it looks like a circuit board).
 3. Search for **UNO R4** and install **"Arduino UNO R4 Boards"**.
 
-No extra libraries are needed. The code talks to the BMX160 directly.
+4. Install the screen library: click the **Library Manager** icon (third from the top, it looks like books), search for **Adafruit SSD1306**, click **Install**, and choose **Install all** when it asks about extra libraries (Adafruit GFX and BusIO).
+
+The code talks to the BMX160 directly, so the screen library is the only one needed. Install it even if you have no screen, because the sketch won't compile without it.
 
 ---
 
@@ -99,6 +102,19 @@ Check the sensor's label or the shop page.
 Every I2C device has an address. The BMX160 can be **0x68** or **0x69**, and the address select switch or solder pad picks between them.
 
 **Leave it however it is.** The program tries both addresses and tells you which one it found. The setting only matters if another sensor on the same wires uses the same address. (8-pin boards have no switch; the SDO pin does the same job, see above.)
+
+### OLED screen (optional)
+
+The screen uses the same two I2C wires as the sensor: both connect to SDA and SCL. On a breadboard, run SDA and SCL to their own rows and plug both the sensor and the screen into them. Each device has its own address (sensor 0x68/0x69, screen 0x3C), so they don't clash.
+
+| OLED pin | Arduino UNO R4 pin |
+|---|---|
+| **VCC** | **3.3V** or **5V** (most of these screens accept either; check the label) |
+| **GND** | **GND** |
+| **SCL** | **SCL** (or A5) |
+| **SDA** | **SDA** (or A4) |
+
+At start-up the Serial Monitor prints "OLED screen found" or "No OLED screen found (that's OK)". The strap works the same with or without a screen.
 
 ### Green and red LEDs (optional)
 
@@ -188,6 +204,12 @@ Type s and press Enter to start a set.
    ```
    (These numbers are from the simulation; yours will differ.)
    - **LED feedback:** after a good rep the **green** LED lights for 1 second; after a rep that needs work the **red** LED lights for 1 second. The orange **L** LED on the Arduino also stays on for 1 second (good) or blinks 3 times quickly (needs work).
+   - **Screen (if connected):**
+     - "Hold still…" while the arm is getting still, then **GO!**
+     - after each rep, **Rep 3/8** with **GOOD** or the fix needed, e.g. "Lower slower"
+     - **Set done** with how many reps were good at the end
+     - "Reference saved!" after a reference rep, and "Sensor problem!" if a wire comes loose
+     - the screen only updates between reps, never during one, so the sensor readings aren't delayed
 4. **Type `e` and press Enter** to end the set:
    ```
    SET FINISHED: 10 reps, 8 good (80%)
@@ -267,6 +289,8 @@ The reference is kept until you record a new one or the Arduino is reset or unpl
 | Stuck at "still moving" | Let the arm hang fully relaxed. Make sure the strap isn't wobbling. Resting the hand against the thigh helps. |
 | Reps not counted | The curl must go above 45° and come back below 20°. Type `p` and look at the plotter to see what angle you're reaching. Restart the set with the arm hanging straight. |
 | Good reps marked "Curl higher" | Record a reference rep (`r`), or lower the default `targetPeak` (step 12). |
+| Screen stays blank | Check the Serial Monitor at start-up. "No OLED screen found" means a wiring problem: check VCC, GND, SDA and SCL. The code tries both screen addresses (0x3C and 0x3D). |
+| Compile error about `Adafruit_SSD1306.h` | Install the **Adafruit SSD1306** library (step 2). |
 | Green or red LED never lights | Flip the LED (long leg goes toward the resistor and pin). Check it's on pin 2 (green) / 3 (red) and the short leg goes to GND. |
 
 ---

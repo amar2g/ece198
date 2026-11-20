@@ -56,3 +56,13 @@ ECE 198 allows AI use with disclosure. This log records each task done with an A
   - 27 tests pass, and the new flow was verified in headless Chrome. Testing found and fixed two bugs: the pretend strap kept making reps after a reference rep, and "Set done" carried over into the next exercise.
 - **Files:** `website/src/class-session.js`, `website/src/config.js`, `website/src/simulator.js`, `website/server.js`, `website/public/join.html`, `website/public/js/join.js`, `website/public/instructor.html`, `website/public/js/instructor.js`, `website/public/js/strap-connection.js`, `website/public/css/style.css`, `website/test/class-session.test.js`, `website/README.md`, `website/HOW_IT_WORKS.md`, `AI_LOG.md`.
 - **Commits:** `551315b` (code), `fee514d` (docs).
+
+## 2026-11-20: OLED screen on the strap
+- **Asked:** a teammate wired a small OLED screen to SDA/SCL (A4/A5). Show the reps on it. We said it's the 0.96″ OLED and chose the AI's suggested layout. Ignore the LEDs, since they already work.
+- **Done:**
+  - Added optional SSD1306 128×64 support to `curl_strap.ino` using the Adafruit SSD1306 library. Screens: "Curl Strap starting…", "Ready", "Hold still…", "GO!", "Rep 3/8" with GOOD or the fix needed (e.g. "Lower / slower"), "Reference saved!", "Set done 6/8 good", "Sensor problem!", and "Sensor not found".
+  - The screen only redraws after events, never mid-rep, so the ~25 ms redraw doesn't delay sensor readings. I2C stays at 400 kHz for the sensor.
+  - The code tries addresses 0x3C and 0x3D, and the strap works normally with no screen.
+  - Compile-checked on a PC with a fake screen that verified every line of text fits on the 128×64 display. Not yet tested on the real board.
+  - README: library install step, screen wiring, what it shows, and troubleshooting.
+- **Files:** `curl_strap/curl_strap.ino`, `README.md`, `AI_LOG.md`.

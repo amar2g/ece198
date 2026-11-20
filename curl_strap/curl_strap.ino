@@ -16,16 +16,21 @@
 //   green LED (pin 2) on for 1 s = good rep, red LED (pin 3) on for 1 s = needs work.
 //   The board's built-in LED (marked "L") also lights for 1 s after a good rep
 //   and blinks 3 times after a rep that needs work, so it works with no LEDs wired.
+//   Optional OLED screen (SSD1306 128x64 on SDA/SCL) shows the rep count and result.
 //
 // See README.md for wiring and step-by-step instructions.
+// Needs the "Adafruit SSD1306" library (Library Manager) for the screen.
 
 #include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include "CurlTracker.h"
 
 // ---------- options ----------
 // UNO R4 WiFi only: to plug the sensor into the small Qwiic connector instead
 // of the SDA/SCL header pins, change Wire to Wire1.
 #define SENSOR_WIRE Wire
+#define SCREEN_WIRE Wire  // the OLED is on SDA/SCL (A4/A5), same bus as the sensor
 
 const uint32_t SAMPLE_MS = 10;  // 100 samples per second
 const int STATUS_LED = LED_BUILTIN;
@@ -198,6 +203,79 @@ void ledSelfTest() {
   digitalWrite(STATUS_LED, HIGH); delay(400); digitalWrite(STATUS_LED, LOW);
 }
 
+// ---------- OLED screen ----------
+// SSD1306 128x64. Only redrawn after events (never mid-rep), because a redraw
+// takes ~25 ms and would delay the sensor readings. Skipped if no screen is found.
+const int SCREEN_W = 128, SCREEN_H = 64;
+Adafruit_SSD1306 screen(SCREEN_W, SCREEN_H, &SCREEN_WIRE, -1, 400000UL, 400000UL);  // keep I2C at 400 kHz for the sensor
+bool screenFound = false;
+
+void setupScreen() {
+  // Most of these screens use address 0x3C, some 0x3D.
+  const uint8_t candidates[2] = {0x3C, 0x3D};
+  for (uint8_t i = 0; i < 2 && !screenFound; ++i) {
+    SCREEN_WIRE.beginTransmission(candidates[i]);
+    if (SCREEN_WIRE.endTransmission() == 0) {
+      screenFound = screen.begin(SSD1306_SWITCHCAPVCC, candidates[i], true, false);
+    }
+  }
+  if (screenFound) screen.setTextColor(SSD1306_WHITE);
+  Serial.println(screenFound ? "OLED screen found" : "No OLED screen found (that's OK)");
+}
+
+// Built-in font: each character is 6 x 8 pixels at size 1
+void drawCentered(const char* text, int16_t y, uint8_t size) {
+  int16_t x = (SCREEN_W - (int16_t)strlen(text) * 6 * size) / 2;
+  if (x < 0) x = 0;
+  screen.setTextSize(size);
+  screen.setCursor(x, y);
+  screen.print(text);
+}
+
+// Shows up to 3 centred lines (pass nullptr to skip one). Size: 1 small, 2 medium, 3 big.
+void showScreen(const char* line1, uint8_t size1, const char* line2, uint8_t size2,
+                const char* line3, uint8_t size3) {
+  if (!screenFound) return;
+  const char* lines[3] = {line1, line2, line3};
+  const uint8_t sizes[3] = {size1, size2, size3};
+  int16_t height = -4;
+  for (int i = 0; i < 3; ++i) if (lines[i]) height += 8 * sizes[i] + 4;
+  int16_t y = (SCREEN_H - height) / 2;
+  screen.clearDisplay();
+  for (int i = 0; i < 3; ++i) {
+    if (!lines[i]) continue;
+    drawCentered(lines[i], y, sizes[i]);
+    y += 8 * sizes[i] + 4;
+  }
+  screen.display();
+}
+
+void showReady() {
+  showScreen("Ready", 3, "waiting to start", 1, nullptr, 1);
+}
+
+// "Rep 3/8" on top, then GOOD or the fix needed (e.g. "Lower" / "slower")
+void showRep(const curl::RepResult& r) {
+  if (!screenFound) return;
+  char count[16];
+  snprintf(count, sizeof(count), "Rep %d/%d", r.number, repsPerSet);
+  screen.clearDisplay();
+  drawCentered(count, 0, 2);
+  screen.drawFastHLine(0, 20, SCREEN_W, SSD1306_WHITE);
+  if (r.good) {
+    drawCentered("GOOD", 32, 3);
+  } else {
+    char fix[16];  // two words, one per line, so they fit in medium text
+    strncpy(fix, curl::Tracker::faultText(r.faults), sizeof(fix) - 1);
+    fix[sizeof(fix) - 1] = '\0';
+    char* secondWord = strchr(fix, ' ');
+    if (secondWord) *secondWord++ = '\0';
+    drawCentered(fix, 26, 2);
+    if (secondWord) drawCentered(secondWord, 46, 2);
+  }
+  screen.display();
+}
+
 // ---------- website data lines ----------
 // Read by website/public/js/strap-protocol.js - keep the two in sync.
 //   DATA,READY
@@ -328,6 +406,7 @@ void startZeroing() {
   Serial.println();
   Serial.println("GET READY: let the arm hang straight down and keep it still...");
   Serial.println("DATA,ZEROING");
+  showScreen("Hold", 2, "still...", 2, "arm straight down", 1);
 }
 
 void endSet() {
@@ -335,6 +414,7 @@ void endSet() {
     mode = MODE_IDLE;
     Serial.println("Cancelled.");
     Serial.println("DATA,SET_CANCELLED");
+    showReady();
     return;
   }
   mode = MODE_IDLE;
@@ -355,6 +435,11 @@ void endSet() {
   Serial.print(reps);
   Serial.print(',');
   Serial.println(good);
+  if (reps > 0) {  // 0 reps = the short set used for a reference rep: keep "Reference saved" on screen
+    char summary[20];
+    snprintf(summary, sizeof(summary), "%d/%d good", good, reps);
+    showScreen("Set done", 2, summary, 2, nullptr, 1);
+  }
   Serial.println("Type s to start another set.");
 }
 
@@ -399,6 +484,7 @@ void handleCommand(char c) {
       } else {
         tracker.teachNextRep();
         Serial.println("OK - the NEXT rep will be saved as the reference. Do one rep the way the kinesiologist wants it.");
+        showScreen("Do 1 rep", 2, "your best", 2, "reference rep", 1);
       }
       break;
     case 'e': case 'E':
@@ -432,6 +518,7 @@ void onSample() {
     if (!sensorErrorShown) {
       Serial.println("ERROR: lost contact with the BMX160. Check the wires, then press the board's RESET button.");
       Serial.println("DATA,ERROR,SENSOR_LOST");
+      showScreen("Sensor", 2, "problem!", 2, "check the wires", 1);
       sensorErrorShown = true;
     }
     return;
@@ -469,6 +556,9 @@ void onSample() {
       Serial.println("GO! Start curling. (type r for a reference rep, e to end the set)");
       Serial.print("DATA,SET_START,");
       Serial.println(repsPerSet);
+      char setText[20];
+      snprintf(setText, sizeof(setText), "set of %d reps", repsPerSet);
+      showScreen("GO!", 3, setText, 1, nullptr, 1);
       printTargets();
     }
     return;
@@ -485,6 +575,7 @@ void onSample() {
       Serial.println("REFERENCE REP SAVED.");
       printRepDetails(r);
       sendDataReference(r);
+      showScreen("Reference", 2, "saved!", 2, "you're ready", 1);
       printTargets();
     } else {
       if (r.good) ledGood(); else ledBad();
@@ -502,6 +593,7 @@ void onSample() {
       }
       printRepDetails(r);
       sendDataRep(r);
+      showRep(r);
       if (r.number >= repsPerSet) {
         Serial.println("That's the set!");
         endSet();
@@ -534,11 +626,14 @@ void setup() {
   Serial.println("=== Curl Strap ===");
   SENSOR_WIRE.begin();
   SENSOR_WIRE.setClock(400000);
+  setupScreen();
+  showScreen("Curl Strap", 2, "starting...", 1, nullptr, 1);
 
   if (!setupSensor()) {
     Serial.println("ERROR: BMX160 not found at address 0x68 or 0x69.");
     scanBus();
     Serial.println("Fix the wiring, then press the RESET button on the Arduino.");
+    showScreen("Sensor", 2, "not found", 2, "check wires + RESET", 1);
     bool blinkOn = false;
     int blinkCount = 0;
     while (true) {  // fast blink (L LED and red LED) = sensor problem
@@ -553,6 +648,7 @@ void setup() {
   Serial.print("BMX160 found at address 0x");
   Serial.println(sensorAddr, HEX);
   Serial.println("DATA,READY");
+  showReady();
   printHelp();
   Serial.println("Type s and press Enter to start a set.");
 }
