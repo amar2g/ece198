@@ -1,0 +1,232 @@
+base     97.30 x  61.54 x  63.30 mm  100.3 g solid PLA  solids=1 valid=True
+shelf    92.15 x  56.24 x   2.00 mm   12.1 g solid PLA  solids=1 valid=True
+lid      97.30 x  61.54 x  26.80 mm   14.7 g solid PLA  solids=1 valid=True
+outside 97.3 x 61.5 x 65.3 mm
+  OK   nothing sticks out past the box walls
+fit checks (overlap, 0 = none):
+  OK   base vs arduino_pcb                              0.000 mm^3
+  OK   base vs usb_port                                 0.000 mm^3
+  OK   base vs barrel_jack                              0.000 mm^3
+  OK   base vs headers_back                             0.000 mm^3
+  OK   base vs headers_front                            0.000 mm^3
+  OK   base vs wires_back                               0.000 mm^3
+  OK   base vs wires_front                              0.000 mm^3
+  OK   base vs usb_plug                                 0.000 mm^3
+  OK   base vs breadboard                               0.000 mm^3
+  OK   base vs oled                                     0.000 mm^3
+  OK   base vs oled_glass                               0.000 mm^3
+  OK   base vs imu                                      0.000 mm^3
+  OK   base vs led_0                                    0.000 mm^3
+  OK   base vs led_1                                    0.000 mm^3
+  OK   base vs strap_0                                  0.000 mm^3
+  OK   base vs strap_1                                  0.000 mm^3
+  OK   base vs riser_wires                              0.000 mm^3
+  OK   shelf vs arduino_pcb                             0.000 mm^3
+  OK   shelf vs usb_port                                0.000 mm^3
+  OK   shelf vs barrel_jack                             0.000 mm^3
+  OK   shelf vs headers_back                            0.000 mm^3
+  OK   shelf vs headers_front                           0.000 mm^3
+  OK   shelf vs wires_back                              0.000 mm^3
+  OK   shelf vs wires_front                             0.000 mm^3
+  OK   shelf vs usb_plug                                0.000 mm^3
+  OK   shelf vs breadboard                              0.000 mm^3
+  OK   shelf vs oled                                    0.000 mm^3
+  OK   shelf vs oled_glass                              0.000 mm^3
+  OK   shelf vs imu                                     0.000 mm^3
+  OK   shelf vs led_0                                   0.000 mm^3
+  OK   shelf vs led_1                                   0.000 mm^3
+  OK   shelf vs strap_0                                 0.000 mm^3
+  OK   shelf vs strap_1                                 0.000 mm^3
+  OK   shelf vs riser_wires                             0.000 mm^3
+  OK   lid vs arduino_pcb                               0.000 mm^3
+  OK   lid vs usb_port                                  0.000 mm^3
+  OK   lid vs barrel_jack                               0.000 mm^3
+  OK   lid vs headers_back                              0.000 mm^3
+  OK   lid vs headers_front                             0.000 mm^3
+  OK   lid vs wires_back                                0.000 mm^3
+  OK   lid vs wires_front                               0.000 mm^3
+  OK   lid vs usb_plug                                  0.000 mm^3
+  OK   lid vs breadboard                                0.000 mm^3
+  OK   lid vs oled                                      0.000 mm^3
+  OK   lid vs oled_glass                                0.000 mm^3
+  OK   lid vs imu                                       0.000 mm^3
+  OK   lid vs led_0                                     0.000 mm^3
+  OK   lid vs led_1                                     0.000 mm^3
+  OK   lid vs strap_0                                   0.000 mm^3
+  OK   lid vs strap_1                                   0.000 mm^3
+  OK   lid vs riser_wires                               0.000 mm^3
+  OK   base vs shelf                                    0.000 mm^3
+  OK   base vs lid                                      0.000 mm^3
+  OK   shelf vs lid                                     0.000 mm^3
+  OK   arduino_pcb vs usb_port                          0.000 mm^3
+  OK   arduino_pcb vs barrel_jack                       0.000 mm^3
+  OK   arduino_pcb vs headers_back                      0.000 mm^3
+  OK   arduino_pcb vs headers_front                     0.000 mm^3
+  OK   arduino_pcb vs wires_back                        0.000 mm^3
+  OK   arduino_pcb vs wires_front                       0.000 mm^3
+  OK   arduino_pcb vs usb_plug                          0.000 mm^3
+  OK   arduino_pcb vs breadboard                        0.000 mm^3
+  OK   arduino_pcb vs oled                              0.000 mm^3
+  OK   arduino_pcb vs oled_glass                        0.000 mm^3
+  OK   arduino_pcb vs imu                               0.000 mm^3
+  OK   arduino_pcb vs led_0                             0.000 mm^3
+  OK   arduino_pcb vs led_1                             0.000 mm^3
+  OK   arduino_pcb vs strap_0                           0.000 mm^3
+  OK   arduino_pcb vs strap_1                           0.000 mm^3
+  OK   arduino_pcb vs riser_wires                       0.000 mm^3
+  OK   usb_port vs barrel_jack                          0.000 mm^3
+  OK   usb_port vs headers_back                         0.000 mm^3
+  OK   usb_port vs headers_front                        0.000 mm^3
+  OK   usb_port vs wires_back                           0.000 mm^3
+  OK   usb_port vs wires_front                          0.000 mm^3
+  OK   usb_port vs breadboard                           0.000 mm^3
+  OK   usb_port vs oled                                 0.000 mm^3
+  OK   usb_port vs oled_glass                           0.000 mm^3
+  OK   usb_port vs imu                                  0.000 mm^3
+  OK   usb_port vs led_0                                0.000 mm^3
+  OK   usb_port vs led_1                                0.000 mm^3
+  OK   usb_port vs strap_0                              0.000 mm^3
+  OK   usb_port vs strap_1                              0.000 mm^3
+  OK   usb_port vs riser_wires                          0.000 mm^3
+  OK   barrel_jack vs headers_back                      0.000 mm^3
+  OK   barrel_jack vs headers_front                     0.000 mm^3
+  OK   barrel_jack vs wires_back                        0.000 mm^3
+  OK   barrel_jack vs wires_front                       0.000 mm^3
+  OK   barrel_jack vs usb_plug                          0.000 mm^3
+  OK   barrel_jack vs breadboard                        0.000 mm^3
+  OK   barrel_jack vs oled                              0.000 mm^3
+  OK   barrel_jack vs oled_glass                        0.000 mm^3
+  OK   barrel_jack vs imu                               0.000 mm^3
+  OK   barrel_jack vs led_0                             0.000 mm^3
+  OK   barrel_jack vs led_1                             0.000 mm^3
+  OK   barrel_jack vs strap_0                           0.000 mm^3
+  OK   barrel_jack vs strap_1                           0.000 mm^3
+  OK   barrel_jack vs riser_wires                       0.000 mm^3
+  OK   headers_back vs headers_front                    0.000 mm^3
+  OK   headers_back vs wires_back                       0.000 mm^3
+  OK   headers_back vs wires_front                      0.000 mm^3
+  OK   headers_back vs usb_plug                         0.000 mm^3
+  OK   headers_back vs breadboard                       0.000 mm^3
+  OK   headers_back vs oled                             0.000 mm^3
+  OK   headers_back vs oled_glass                       0.000 mm^3
+  OK   headers_back vs imu                              0.000 mm^3
+  OK   headers_back vs led_0                            0.000 mm^3
+  OK   headers_back vs led_1                            0.000 mm^3
+  OK   headers_back vs strap_0                          0.000 mm^3
+  OK   headers_back vs strap_1                          0.000 mm^3
+  OK   headers_back vs riser_wires                      0.000 mm^3
+  OK   headers_front vs wires_back                      0.000 mm^3
+  OK   headers_front vs wires_front                     0.000 mm^3
+  OK   headers_front vs usb_plug                        0.000 mm^3
+  OK   headers_front vs breadboard                      0.000 mm^3
+  OK   headers_front vs oled                            0.000 mm^3
+  OK   headers_front vs oled_glass                      0.000 mm^3
+  OK   headers_front vs imu                             0.000 mm^3
+  OK   headers_front vs led_0                           0.000 mm^3
+  OK   headers_front vs led_1                           0.000 mm^3
+  OK   headers_front vs strap_0                         0.000 mm^3
+  OK   headers_front vs strap_1                         0.000 mm^3
+  OK   headers_front vs riser_wires                     0.000 mm^3
+  OK   wires_back vs wires_front                        0.000 mm^3
+  OK   wires_back vs usb_plug                           0.000 mm^3
+  OK   wires_back vs breadboard                         0.000 mm^3
+  OK   wires_back vs oled                               0.000 mm^3
+  OK   wires_back vs oled_glass                         0.000 mm^3
+  OK   wires_back vs imu                                0.000 mm^3
+  OK   wires_back vs led_0                              0.000 mm^3
+  OK   wires_back vs led_1                              0.000 mm^3
+  OK   wires_back vs strap_0                            0.000 mm^3
+  OK   wires_back vs strap_1                            0.000 mm^3
+  OK   wires_back vs riser_wires                        0.000 mm^3
+  OK   wires_front vs usb_plug                          0.000 mm^3
+  OK   wires_front vs breadboard                        0.000 mm^3
+  OK   wires_front vs oled                              0.000 mm^3
+  OK   wires_front vs oled_glass                        0.000 mm^3
+  OK   wires_front vs imu                               0.000 mm^3
+  OK   wires_front vs led_0                             0.000 mm^3
+  OK   wires_front vs led_1                             0.000 mm^3
+  OK   wires_front vs strap_0                           0.000 mm^3
+  OK   wires_front vs strap_1                           0.000 mm^3
+  OK   wires_front vs riser_wires                       0.000 mm^3
+  OK   usb_plug vs breadboard                           0.000 mm^3
+  OK   usb_plug vs oled                                 0.000 mm^3
+  OK   usb_plug vs oled_glass                           0.000 mm^3
+  OK   usb_plug vs imu                                  0.000 mm^3
+  OK   usb_plug vs led_0                                0.000 mm^3
+  OK   usb_plug vs led_1                                0.000 mm^3
+  OK   usb_plug vs strap_0                              0.000 mm^3
+  OK   usb_plug vs strap_1                              0.000 mm^3
+  OK   usb_plug vs riser_wires                          0.000 mm^3
+  OK   breadboard vs oled                               0.000 mm^3
+  OK   breadboard vs oled_glass                         0.000 mm^3
+  OK   breadboard vs imu                                0.000 mm^3
+  OK   breadboard vs led_0                              0.000 mm^3
+  OK   breadboard vs led_1                              0.000 mm^3
+  OK   breadboard vs strap_0                            0.000 mm^3
+  OK   breadboard vs strap_1                            0.000 mm^3
+  OK   breadboard vs riser_wires                        0.000 mm^3
+  OK   oled vs oled_glass                               0.000 mm^3
+  OK   oled vs imu                                      0.000 mm^3
+  OK   oled vs led_0                                    0.000 mm^3
+  OK   oled vs led_1                                    0.000 mm^3
+  OK   oled vs strap_0                                  0.000 mm^3
+  OK   oled vs strap_1                                  0.000 mm^3
+  OK   oled vs riser_wires                              0.000 mm^3
+  OK   oled_glass vs imu                                0.000 mm^3
+  OK   oled_glass vs led_0                              0.000 mm^3
+  OK   oled_glass vs led_1                              0.000 mm^3
+  OK   oled_glass vs strap_0                            0.000 mm^3
+  OK   oled_glass vs strap_1                            0.000 mm^3
+  OK   oled_glass vs riser_wires                        0.000 mm^3
+  OK   imu vs led_0                                     0.000 mm^3
+  OK   imu vs led_1                                     0.000 mm^3
+  OK   imu vs strap_0                                   0.000 mm^3
+  OK   imu vs strap_1                                   0.000 mm^3
+  OK   imu vs riser_wires                               0.000 mm^3
+  OK   led_0 vs led_1                                   0.000 mm^3
+  OK   led_0 vs strap_0                                 0.000 mm^3
+  OK   led_0 vs strap_1                                 0.000 mm^3
+  OK   led_0 vs riser_wires                             0.000 mm^3
+  OK   led_1 vs strap_0                                 0.000 mm^3
+  OK   led_1 vs strap_1                                 0.000 mm^3
+  OK   led_1 vs riser_wires                             0.000 mm^3
+  OK   strap_0 vs strap_1                               0.000 mm^3
+  OK   strap_0 vs riser_wires                           0.000 mm^3
+  OK   strap_1 vs riser_wires                           0.000 mm^3
+assembly checks:
+  OK   Arduino lifted 1 mm vs base                      0.000 mm^3
+  OK   Arduino lifted 5 mm vs base                      0.000 mm^3
+  OK   Arduino lifted 10 mm vs base                     0.000 mm^3
+  OK   Arduino lifted 20 mm vs base                     0.000 mm^3
+  OK   Arduino lifted 30 mm vs base                     0.000 mm^3
+  OK   Arduino lifted 63 mm vs base                     0.000 mm^3
+  OK   shelf at +1.25 x, +25 z                          0.000 mm^3
+  OK   shelf at +1.25 x, +15 z                          0.000 mm^3
+  OK   shelf at +1.25 x, +8 z                           0.000 mm^3
+  OK   shelf at +1.25 x, +4 z                           0.000 mm^3
+  OK   shelf at +1.25 x, +2 z                           0.000 mm^3
+  OK   shelf at +1.25 x, +1 z                           0.000 mm^3
+  OK   shelf at +1.25 x, +0 z                           0.000 mm^3
+  OK   shelf at +0.94 x, +0 z                           0.000 mm^3
+  OK   shelf at +0.62 x, +0 z                           0.000 mm^3
+  OK   shelf at +0.31 x, +0 z                           0.000 mm^3
+  OK   shelf at +0.00 x, +0 z                           0.000 mm^3
+  OK   lid at +1.25 x, +25 z                            0.000 mm^3
+  OK   lid at +1.25 x, +15 z                            0.000 mm^3
+  OK   lid at +1.25 x, +8 z                             0.000 mm^3
+  OK   lid at +1.25 x, +4 z                             0.000 mm^3
+  OK   lid at +1.25 x, +2 z                             0.000 mm^3
+  OK   lid at +1.25 x, +1 z                             0.000 mm^3
+  OK   lid at +1.25 x, +0 z                             0.000 mm^3
+  OK   lid at +0.94 x, +0 z                             0.000 mm^3
+  OK   lid at +0.62 x, +0 z                             0.000 mm^3
+  OK   lid at +0.31 x, +0 z                             0.000 mm^3
+  OK   lid at +0.00 x, +0 z                             0.000 mm^3
+  OK   shelf is hooked at the USB end (blocked if lifted)
+  OK   lid is hooked at the USB end (blocked if lifted)
+  OK   strap tunnel 0: skin under is 100.0% solid
+  OK   strap tunnel 0: roof over is 100.0% solid
+  OK   strap tunnel 1: skin under is 100.0% solid
+  OK   strap tunnel 1: roof over is 100.0% solid
+OLED glass 26.7 x 19.26 behind window 28.5 x 21.0; glass is 12.9 mm below the lid top
+RESULT: ALL CHECKS PASS
